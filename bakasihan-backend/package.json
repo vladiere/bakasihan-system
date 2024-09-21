@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "dev": "ts-node-dev --poll src/app.ts",
-    "start": "npm run build && node build/app.js",
-    "build": "rimraf ./build && tsc",
-    "clean": "rimraf ./build",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "dev": "ts-node-dev --poll src/app.ts", 
+  "dev:watch": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/app.ts",
+  "start": "npm run build && node build/app.js",
+  "activate": "--watch ts-node-dev --poll src/app.ts",
+  "build": "rimraf ./build && tsc",
+  "clean": "rimraf ./build",
+  "test": "echo \"Error: no test specified\" && exit 1"
+},
+
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -19,6 +22,7 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/morgan": "^1.9.9",
+    "@types/multer": "^1.4.12",
     "@types/mysql": "^2.15.26",
     "@types/node": "^20.12.12",
     "@types/uuid": "^9.0.8",
@@ -34,6 +38,7 @@
     "cors": "^2.8.5",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
     "mysql2": "^3.9.8",
     "uuid": "^9.0.1"
   }

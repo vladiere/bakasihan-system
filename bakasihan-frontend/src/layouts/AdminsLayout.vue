@@ -13,7 +13,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-close-popup @click="onItemClick">
+            <q-item clickable v-close-popup @click="handleLogout">
               <q-item-section>
                 <q-item-label>Logout</q-item-label>
               </q-item-section>
@@ -107,10 +107,18 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { logout } from 'src/services/api.services';
+import { useAuthStore } from 'src/stores/authStore';
 import AdminsLayoutListComponent, {
   AdminsLayoutListInterface,
 } from 'components/AdminsLayoutListComponent.vue';
+import { useQuasar, QSpinnerGears } from 'quasar';
+import { useRouter } from 'vue-router';
 
+const $q = useQuasar();
+
+const router = useRouter();
+const authStore = useAuthStore();
 const leftDrawerOpen = ref(false);
 
 const toggleLeftDrawer = () => {
@@ -119,6 +127,36 @@ const toggleLeftDrawer = () => {
 
 const onItemClick = () => {
   console.log('Clicked');
+};
+
+const handleLogout = async () => {
+  $q.loading.show({
+    delay: 400, // ms
+    spinner: QSpinnerGears,
+  });
+  await logout({})
+    .then((response) => {
+      $q.loading.hide();
+      $q.notify({
+        color: 'positive',
+        icon: 'check',
+        textColor: 'white',
+        position: 'top',
+        message: response.data.message,
+      });
+      authStore.logout();
+      router.push('/login');
+    })
+    .catch((err) => {
+      $q.loading.hide();
+      $q.notify({
+        color: 'negative',
+        icon: 'close',
+        textColor: 'white',
+        position: 'top',
+        message: err.response.data.message,
+      });
+    });
 };
 
 const casheirs_props = ref<AdminsLayoutListInterface[]>([
@@ -148,12 +186,12 @@ const menus_props = ref<AdminsLayoutListInterface[]>([
   {
     title: 'Add new',
     icon_name: 'mdi-hamburger-plus',
-    path_name: 'add',
+    path_name: 'add_menu',
   },
   {
     title: 'Category',
     icon_name: 'mdi-format-list-checkbox',
-    path_name: 'category',
+    path_name: 'menu_category',
   },
   {
     title: 'Tables',
