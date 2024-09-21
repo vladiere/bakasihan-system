@@ -1,35 +1,24 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import config from "./config.util";
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import config from './config.util';
 
-// Middleware for verifying JWT token
-const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
-  
+  const token = authHeader && authHeader.split(' ')[1];
 
-  if (!authHeader) {
-    console.warn("Unauthorized: No Token Provided");
-    return res.status(401).json({ message: "Unauthorized: No token provided" });
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  if (!authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Unauthorized: Invalid token" });
+  try {
+    const user = await jwt.verify(token, config.server.token.accessSecret) as jwt.JwtPayload;
+
+    req.body.user = user;
+    next();
+  } catch (err) {
+    // Handle token verification errors
+    return res.status(401).json({ message: 'Unauthorized', error: err });
   }
-
-  const token = authHeader.slice(7);
-
-  jwt.verify(
-    token,
-    config.server.token.accessSecret,
-    (err: any, decoded: any) => {
-      if (err) {
-        console.error(err.message);
-        return res.status(401).json({ message: "Unauthorized: Token expired" });
-      }
-      req.body.user = decoded.user; // Attach user data to the request for later use
-      next();
-    },
-  );
 };
 
 export default verifyToken;

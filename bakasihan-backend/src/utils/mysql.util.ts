@@ -3,8 +3,8 @@ import config from "./config.util";
 
 // Parameters for mysql connection
 const params = {
-  user: config.mysql.user,
-  password: config.mysql.pass,
+  user: config.mysql.username,
+  password: config.mysql.password,
   host: config.mysql.host,
   database: config.mysql.database,
 };
@@ -12,7 +12,7 @@ const params = {
 // Setting up the database connection
 const Connect = async () =>
   new Promise<mysql.Connection>((resolve, reject) => {
-    const connection = mysql.createConnection(config.mysqlurl);
+    const connection = mysql.createConnection(params);
 
     connection.connect((error) => {
       if (error) {
