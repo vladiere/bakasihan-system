@@ -33,7 +33,14 @@ app.use(helmet());
 app.use('/api/auth',auth)
 app.use('/api/admin',admin)
 app.use('/api/user',user)
-app.use('/api/images/',express.static('./src/public'))
+
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  next();
+});
+
+app.use('/getImage/', express.static('src/public'));
+
 
 // Default route
 app.get('/', (req, res) => {

@@ -5,29 +5,18 @@
 </style>
 
 <template>
-  <q-card class="my-card q-ma-sm" bordered>
-    <img src="https://cdn.quasar.dev/img/parallax2.jpg">
-
+  <q-card class="my-card q-ma-sm" bordered v-if="props.products">
+    <img :src="getImage(props.products.product_image)" />
     <q-list>
-      <q-item clickable>
+      <q-item>
         <q-item-section avatar>
-          <q-icon color="primary" name="local_bar" />
+          <q-item-label>{{ props.products.product_name }}</q-item-label>
+          <q-item-label caption>{{
+            props.products.product_description
+          }}</q-item-label>
         </q-item-section>
-
-        <q-item-section>
-          <q-item-label>Bar XYZ</q-item-label>
-          <q-item-label caption>Have a drink.</q-item-label>
-        </q-item-section>
-      </q-item>
-
-      <q-item clickable>
-        <q-item-section avatar>
-          <q-icon color="red" name="local_gas_station" />
-        </q-item-section>
-
-        <q-item-section>
-          <q-item-label>Gas Station</q-item-label>
-          <q-item-label caption>Fill your gas tank.</q-item-label>
+        <q-item-section
+          >{{ formatToCurrency(props.products.price) }}
         </q-item-section>
       </q-item>
     </q-list>
@@ -35,4 +24,14 @@
 </template>
 
 <script setup lang="ts">
+import { getImage, formatToCurrency } from 'src/services/api.services';
+import { productT } from './models';
+import { PropType } from 'vue';
+
+const props = defineProps({
+  products: {
+    type: Object as PropType<productT>,
+  },
+});
+console.log(props.products);
 </script>
