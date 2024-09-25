@@ -26,7 +26,10 @@
         <span class="text-h5 text-weight-normal text-left text-grey-9"
           >Signin to your account</span
         >
-        <q-form class="col column q-gutter-y-md full-width">
+        <q-form
+          class="col column q-gutter-y-md full-width"
+          @submit="handleLogin"
+        >
           <q-input
             v-model="formdata.username"
             color="dark"
@@ -49,7 +52,6 @@
           </q-input>
           <q-btn
             color="accent"
-            @click="handleLogin"
             :label="!loading ? 'signin' : '...loading'"
             :loading="loading"
             :disable="loading"

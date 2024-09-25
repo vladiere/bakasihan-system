@@ -181,7 +181,7 @@ const menus_props = ref<AdminsLayoutListInterface[]>([
   {
     title: 'List',
     icon_name: 'mdi-format-list-group',
-    path_name: 'view',
+    path_name: 'product_menu',
   },
   {
     title: 'Add new',
@@ -196,7 +196,7 @@ const menus_props = ref<AdminsLayoutListInterface[]>([
   {
     title: 'Tables',
     icon_name: 'mdi-table-column-width',
-    path_name: 'tables',
+    path_name: 'table_list',
   },
 ]);
 
