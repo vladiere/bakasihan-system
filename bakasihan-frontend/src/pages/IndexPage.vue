@@ -12,7 +12,7 @@
           :key="menu.id"
           :products="menu"
           class="menu-item"
-          @click="console.log(menu)"
+          @click="addtoCart(menu)"
         />
       </div>
     </div>
@@ -24,10 +24,11 @@ import FoodMenuCard from 'components/FoodMenuCard.vue';
 import { onMounted, ref, watch } from 'vue';
 import { getProducts } from 'src/services/api.services';
 import { useRouter } from 'vue-router';
-import { productsDataAllT } from 'src/components/models';
+import { productsDataAllT, productT, foodOrder } from 'src/components/models';
+import { useOrderStore } from 'src/stores/orderStore';
 
 const router = useRouter();
-
+const orderStore = useOrderStore();
 watch(
   () => router.currentRoute.value,
   (newVal, _oldVal) => {
@@ -51,7 +52,23 @@ const getUserProducts = async () => {
       console.log(err);
     });
 };
-
+const addtoCart = (data: productT) => {
+  const NewData: foodOrder = {
+    id: data.id,
+    category_id: data.category_id,
+    product_image: data.product_image,
+    product_name: data.product_name,
+    product_description: data.product_description,
+    price: data.price,
+    status: data.status,
+    quantity: 1,
+  };
+  if (data.category_id == 1) {
+    orderStore.addFoods(NewData);
+  } else {
+    orderStore.addDrinks(NewData);
+  }
+};
 onMounted(() => {
   getUserProducts();
 });

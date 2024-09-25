@@ -64,3 +64,23 @@ export interface productsDataAllT{
     category_name: string;
     products: productT[];
 }
+export interface foodOrder{
+  id:number
+  category_id:number
+  product_image:string
+  product_name:string
+  product_description:string
+  price:number
+  status:number
+  quantity:number
+}
+
+export interface myOrderT{
+  order_no:string|null
+  foods:Array<foodOrder|null>
+  drinks:Array<foodOrder|null>
+  table_no:number|null
+  order_type:string|null
+  customer_name:string|null
+  total_amount:number
+}
