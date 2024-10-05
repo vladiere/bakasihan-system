@@ -1,14 +1,30 @@
 <template>
   <q-page padding class="fit column">
+    <div class="justify-start">
+      <q-btn
+        label="Goback"
+        icon="goback"
+        color="secondary"
+        @click="orderStore.previewProcess()"
+      />
+      <q-btn
+        label="Refresh"
+        icon="refresh"
+        @click="handleGetCustomerTables"
+        color="primary"
+      />
+    </div>
     <!-- content -->
     <div
       class="col row items-center justify-center flex-wrap q-gutter-x-lg full-height"
     >
       <TableComponent
-        v-for="n in 10"
-        :key="n"
-        :table_no="n"
-        @select-table="tableSelected"
+        v-for="table in customerTables"
+        :key="table.id"
+        :table_no="table.table_no"
+        :order_no="table.order_no ?? ''"
+        :status="table.status"
+        @click="tableSelected(table.table_no)"
       />
     </div>
     <div class="col row items-end justify-between q-px-lg">
@@ -33,7 +49,7 @@
           v-if="isSelected"
           color="grey-6"
           label="cancel"
-          @click="isSelected = !isSelected"
+          @click="cancelSelect"
           class="q-px-md"
         />
         <q-btn
@@ -47,21 +63,99 @@
       </div>
     </div>
   </q-page>
+  <q-dialog v-model="processDialog">
+    <q-card>
+      <q-card-section class="text-center">
+        Are you sure you want to place the order?
+      </q-card-section>
+      <q-card-section>
+        <div class="flex justify-evenly">
+          <q-btn
+            label="No"
+            icon="close"
+            color="negative"
+            @click="processDialog = false"
+          />
+          <q-btn
+            label="Yes"
+            icon="check"
+            color="positive"
+            @click="ProceedtoReciept"
+          />
+        </div>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-
+import { ref, onMounted } from 'vue';
+import { addUserOrder, userCustomersTable } from 'src/services/api.services';
 import TableComponent from 'components/TableComponent.vue';
+import { customersTableDataT } from 'src/components/models';
+import { useOrderStore } from 'src/stores/orderStore';
+import { useQuasar } from 'quasar';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
+const $q = useQuasar();
+const customerTables = ref<Array<customersTableDataT>>([]);
 const isSelected = ref(false);
+const processDialog = ref(false);
+const orderStore = useOrderStore();
 
-const tableSelected = (n_id: any) => {
+const handleGetCustomerTables = async () => {
+  await userCustomersTable()
+    .then((response) => {
+      if (response) {
+        customerTables.value = response.data.customer_tables;
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+};
+const ProceedtoReciept = async () => {
+  const postData = {
+    order_no: orderStore.myOrder?.order_no,
+    foods: JSON.stringify(orderStore.myOrder?.foods),
+    drinks: JSON.stringify(orderStore.myOrder?.drinks),
+    table_no: orderStore.myOrder?.table_no,
+    order_type: orderStore.myOrder?.order_type,
+    customer_name: orderStore.myOrder?.customer_name,
+    total_amount: orderStore.myOrder?.total_amount,
+  };
+
+  await addUserOrder(postData)
+    .then((response) => {
+      $q.notify({
+        type: 'positive',
+        message: response.data.message,
+      });
+      processDialog.value = false;
+      orderStore.proceedToReciept();
+      router.push('/reciept');
+    })
+    .catch((err) => {
+      $q.notify({
+        type: 'negative',
+        message: err.response.data.message,
+      });
+    });
+};
+const cancelSelect = () => {
+  isSelected.value = false;
+  orderStore.removeTable();
+};
+const tableSelected = (table_no: number) => {
   isSelected.value = true;
-  console.log(n_id);
+  orderStore.addTableNo(table_no);
 };
 
 const clicked = () => {
-  console.log('selected and place order');
+  processDialog.value = true;
 };
+onMounted(() => {
+  handleGetCustomerTables();
+});
 </script>

@@ -52,6 +52,7 @@
           </q-input>
           <q-btn
             color="accent"
+            type="submit"
             :label="!loading ? 'signin' : '...loading'"
             :loading="loading"
             :disable="loading"
