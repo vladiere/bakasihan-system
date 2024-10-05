@@ -6,9 +6,9 @@
     <div
       class="q-mx-md q-pa-xs"
       :class="{
-        'bg-green': props.status === 1,
-        'bg-red-5': props.status === 2,
-        'bg-grey-8': props.status === 3,
+        'bg-green': props.status == 1,
+        'bg-red-5': props.status == 2,
+        'bg-grey-8': props.status == 3,
       }"
       style="width: 75%; border-radius: 15px"
     ></div>
@@ -17,9 +17,9 @@
         class="q-pa-xs"
         style="border-radius: 15px"
         :class="{
-          'bg-green': props.status === 1,
-          'bg-red-5': props.status === 2,
-          'bg-grey-8': props.status === 3,
+          'bg-green': props.status == 1,
+          'bg-red-5': props.status == 2,
+          'bg-grey-8': props.status == 3,
         }"
       ></div>
 
@@ -27,9 +27,9 @@
         class="q-pa-lg column items-center justify-center"
         style="border-radius: 15px; width: 155px; height: 150px"
         :class="{
-          'bg-green': props.status === 1,
-          'bg-red-5': props.status === 2,
-          'bg-grey-8': props.status === 3,
+          'bg-green': props.status == 1,
+          'bg-red-5': props.status == 2,
+          'bg-grey-8': props.status == 3,
         }"
       >
         <span class="text-body1 text-center">TABLE {{ props.table_no }}</span>
@@ -41,9 +41,9 @@
       <div
         class="q-pa-xs"
         :class="{
-          'bg-green': props.status === 1,
-          'bg-red-5': props.status === 2,
-          'bg-grey-8': props.status === 3,
+          'bg-green': props.status == 1,
+          'bg-red-5': props.status == 2,
+          'bg-grey-8': props.status == 3,
         }"
         style="border-radius: 15px"
       ></div>
@@ -51,9 +51,9 @@
     <div
       class="q-mx-md q-pa-xs"
       :class="{
-        'bg-green': props.status === 1,
-        'bg-red-5': props.status === 2,
-        'bg-grey-8': props.status === 3,
+        'bg-green': props.status == 1,
+        'bg-red-5': props.status == 2,
+        'bg-grey-8': props.status == 3,
       }"
       style="width: 75%; border-radius: 15px"
     ></div>

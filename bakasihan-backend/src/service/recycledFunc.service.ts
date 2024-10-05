@@ -1,9 +1,11 @@
 import executeQuery from '../utils/executeQuery.util';
 import { Request,Response } from "express";
 import { countTable,Category } from '../types/products.types';
+import { recieptTypes } from '../types/tables.types';
 
 export const getProducts = async (req: Request, res: Response) => {
-    try {
+      console.log(req.query)
+      const searchTerm = req.query.searchTerm ? `%${req.query.searchTerm}%` : '%%';
       // SQL query to retrieve products and categories
       const Query = `
         SELECT DISTINCT 
@@ -17,13 +19,11 @@ export const getProducts = async (req: Request, res: Response) => {
           p.status  
         FROM product_categories_tbl AS c 
         LEFT JOIN products_tbl AS p ON c.id = p.category_id
+        WHERE c.category_name LIKE ? OR p.product_name LIKE ? OR p.product_description LIKE ?
       `;
   
       // Execute the query
-      const result = await executeQuery(Query, []) as Array<any>; // Adjust type if necessary
-      if (!result || result.length === 0) {
-        return res.status(404).send({ message: "No products found." });
-      }
+      const result = await executeQuery(Query, [searchTerm,searchTerm,searchTerm]) as Array<any>; // Adjust type if necessary
   
       // Transform results into the desired structure
       const data = result.reduce((acc: Array<Category>, row) => {
@@ -52,10 +52,7 @@ export const getProducts = async (req: Request, res: Response) => {
   
       // Send the response with the transformed data
       return res.status(200).send({ products: data });
-    } catch (error) {
-      console.error(error); // Log the error for debugging
-      return res.status(500).send({ message: "Something went wrong with the database." });
-    }
+   
   };
   
 export const getProductCategories = async(req:Request,res:Response)=>{
@@ -175,4 +172,20 @@ export const getAllAdminProducts = async(req: Request, res: Response) => {
     } catch (error) {
       return res.status(500).send({ message: "Server error.", error });
     }
+  }
+  export const getReciept = async(req:Request,res:Response)=>{
+    const {order_no,customer_name} = req.body
+    const getQuery = 'SELECT * FROM order_tbl WHERE order_no = ? AND customer_name = ?'
+
+    const reciept = await executeQuery(getQuery,[order_no,customer_name]) as Array<recieptTypes | null>
+
+    return res.status(200).send({reciept:reciept[0]})
+  }
+  
+  export const checkIfTheresSameOrderID = async(req:Request,res:Response)=>{
+    const {order_no} = req.body
+    const getQuery = 'SELECT order_no FROM order_tbl WHERE order_no = ?'
+
+    const result = await executeQuery(getQuery,[order_no])
+    return res.status(200).send({result:result})
   }

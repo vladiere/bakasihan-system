@@ -7,6 +7,11 @@
           dense
           rounded
           dropdown-icon="mdi-chevron-double-up"
+          v-if="
+            orderStore.myOrder &&
+            typeof orderStore.myOrder.order_process === 'number' &&
+            orderStore.myOrder.order_process === 1
+          "
         >
           <q-list style="width: 250px" class="q-py-md">
             <q-item clickable v-close-popup :to="{ name: 'index' }">
@@ -91,7 +96,10 @@
           </q-list>
         </q-btn-dropdown>
 
-        <q-toolbar-title> Entoy's Bakasihan </q-toolbar-title>
+        <q-toolbar-title>
+          <q-avatar><img src="../assets/logo.png" alt="" /></q-avatar> Entoy's
+          Bakasihan
+        </q-toolbar-title>
 
         <q-input
           outlined
@@ -101,23 +109,45 @@
           label-color="accent"
           bg-color="grey-5"
           class="col-grow"
-          @keydown.enter="onSearchItem"
           v-model="searchItem"
+          :debounce="1000"
+          v-if="
+            orderStore.myOrder &&
+            typeof orderStore.myOrder.order_process === 'number' &&
+            orderStore.myOrder.order_process === 1
+          "
         />
         <q-space />
 
-        <q-btn dense flat round icon="menu" @click="drawer = !drawer" />
+        <q-btn
+          dense
+          flat
+          round
+          icon="menu"
+          @click="drawer = !drawer"
+          v-if="
+            orderStore.myOrder &&
+            typeof orderStore.myOrder.order_process === 'number' &&
+            orderStore.myOrder.order_process === 1 &&
+            drawer === false
+          "
+        />
       </q-toolbar>
     </q-header>
 
     <q-drawer
       show-if-above
-      class="bg-grey-11"
+      class="bg-grey-11 drawer-user"
       v-model="drawer"
-      :width="420"
+      :width="390"
       :breakpoint="400"
       side="right"
       bordered
+      v-if="
+        orderStore.myOrder &&
+        typeof orderStore.myOrder.order_process === 'number' &&
+        orderStore.myOrder.order_process === 1
+      "
     >
       <q-scroll-area
         style="
@@ -130,18 +160,39 @@
           <h6 class="text-center">Food</h6>
           <q-item v-for="food in orderStore.myOrder?.foods" :key="food?.id">
             <q-item-section avatar>
-              <q-avatar color="accent" text-color="white" icon="mdi-food" />
+              <q-avatar color="accent" text-color="white">
+                <img :src="getImage(food?.product_image || '')" alt="" />
+              </q-avatar>
             </q-item-section>
 
             <q-item-section>{{ food?.product_name }}</q-item-section>
 
             <q-item-section side>
               <div class="row items-center q-gutter-x-sm">
-                <q-btn size="sm" flat dense icon="mdi-minus" />
+                <q-btn
+                  size="sm"
+                  flat
+                  dense
+                  icon="mdi-minus"
+                  @click="orderStore.subtractQuantity(food?.id || 0, 'food')"
+                />
                 <span class="text-weight-normal text-body1">{{
                   food?.quantity
                 }}</span>
-                <q-btn size="sm" flat dense icon="mdi-plus" />
+                <q-btn
+                  size="sm"
+                  flat
+                  dense
+                  icon="mdi-plus"
+                  @click="orderStore.addQuantity(food?.id || 0, 'food')"
+                />
+                <q-btn
+                  size="sm"
+                  flat
+                  dense
+                  icon="mdi-close"
+                  @click="orderStore.removeFoods(food?.id || 0)"
+                />
               </div>
             </q-item-section>
           </q-item>
@@ -150,18 +201,42 @@
           <h6 class="text-center">Drinks</h6>
           <q-item v-for="drink in orderStore.myOrder?.drinks" :key="drink?.id">
             <q-item-section avatar>
-              <q-avatar color="accent" text-color="white" icon="mdi-drink" />
+              <q-avatar color="accent" text-color="white">
+                <img
+                  :src="getImage(drink?.product_image || '')"
+                  alt="product image"
+                />
+              </q-avatar>
             </q-item-section>
 
             <q-item-section>{{ drink?.product_name }}</q-item-section>
 
             <q-item-section side>
               <div class="row items-center q-gutter-x-sm">
-                <q-btn size="sm" flat dense icon="mdi-minus" />
+                <q-btn
+                  size="sm"
+                  flat
+                  dense
+                  icon="mdi-minus"
+                  @click="orderStore.subtractQuantity(drink?.id || 0, 'drink')"
+                />
                 <span class="text-weight-normal text-body1">{{
                   drink?.quantity
                 }}</span>
-                <q-btn size="sm" flat dense icon="mdi-plus" />
+                <q-btn
+                  size="sm"
+                  flat
+                  dense
+                  icon="mdi-plus"
+                  @click="orderStore.addQuantity(drink?.id || 0, 'drink')"
+                />
+                <q-btn
+                  size="sm"
+                  flat
+                  dense
+                  icon="mdi-close"
+                  @click="orderStore.removeDrinks(drink?.id || 0)"
+                />
               </div>
             </q-item-section>
           </q-item>
@@ -169,23 +244,48 @@
       </q-scroll-area>
 
       <div
-        class="absolute-top row items-center justify-between q-pa-xs shadow-8"
+        class="absolute-top row items-center justify-between q-pa-xs shadow-8 q-gutter-md"
       >
+        <q-btn
+          dense
+          flat
+          round
+          icon="menu"
+          @click="drawer = !drawer"
+          v-if="
+            orderStore.myOrder &&
+            typeof orderStore.myOrder.order_process === 'number' &&
+            orderStore.myOrder.order_process === 1 &&
+            drawer === true
+          "
+        />
         <q-input
           dense
           outlined
           v-model="customers_name"
           color="accent"
           label="Provide customer's name"
-          class="col q-mr-lg"
+          class="col q-mr-lg q-col-12 q-col-sm-6 q-col-md-4"
         />
         <div class="row items-center q-gutter-x-sm">
-          <q-btn flat dense icon="mdi-plus" rounded>
+          <q-btn
+            flat
+            dense
+            icon="mdi-plus"
+            rounded
+            @click="addCustomer(customers_name)"
+          >
             <q-tooltip anchor="bottom left" self="center middle">
               Add customer name
             </q-tooltip>
           </q-btn>
-          <q-btn flat dense icon="mdi-refresh" rounded>
+          <q-btn
+            flat
+            dense
+            icon="mdi-refresh"
+            rounded
+            @click="orderStore.resetOrders()"
+          >
             <q-tooltip anchor="bottom left" self="center middle">
               Reset order
             </q-tooltip>
@@ -201,32 +301,23 @@
           <span
             class="col text-weight-normal"
             style="font-size: 14px; font-weight: 500"
-            >Sub-total</span
+            >Total-amount</span
           >
           <span class="col text-weight-bold"
             >:
             {{ formatToCurrency(orderStore.myOrder?.total_amount || 0) }}</span
           >
         </div>
-        <div class="row items-center q-px-md">
-          <span
-            class="col text-weight-normal"
-            style="font-size: 14px; font-weight: 500"
-            >Tax</span
-          >
-          <span class="col text-weight-bold">: 13,000</span>
-        </div>
-        <div class="row items-center q-px-md">
-          <span
-            class="col text-weight-normal"
-            style="font-size: 14px; font-weight: 500"
-            >Payable Amount</span
-          >
-          <span class="col text-weight-bold">: 13,000</span>
-        </div>
         <div class="row items-center q-gutter-x-md q-pb-sm">
           <q-btn dense rounded color="grey-8" label="hold" class="col" />
-          <q-btn dense rounded color="accent" label="proceed" class="col" />
+          <q-btn
+            dense
+            rounded
+            color="accent"
+            label="proceed"
+            class="col"
+            @click="proccedToOrderType"
+          />
         </div>
       </div>
     </q-drawer>
@@ -238,33 +329,169 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { useOrderStore } from 'src/stores/orderStore';
-import { formatToCurrency } from 'src/services/api.services';
+import {
+  formatToCurrency,
+  getImage,
+  generateRandomNumber,
+  userCheckIfTheresSameOrderID,
+} from 'src/services/api.services';
+import { useProductStore } from 'src/stores/productStore';
+import { useQuasar } from 'quasar';
+const $q = useQuasar();
 const drawer = ref(false);
 const router = useRouter();
-const searchItem = ref('');
-const customers_name = ref('');
+const searchItem = ref<string>('');
+const customers_name = ref<string>('');
 const orderStore = useOrderStore();
-
+let timer: NodeJS.Timeout | undefined;
+const productStore = useProductStore();
 const onItemClick = () => {
   console.log('Clicked');
 };
-const onSearchItem = () => {
-  if (searchItem.value === '') {
-    return;
-  }
-
-  router.replace({ name: 'index', query: { search: searchItem.value } });
-};
-
 watch(
   () => router.currentRoute.value.name,
   (newVal, oldVal) => {
     if (newVal !== 'index') {
       drawer.value = !drawer.value;
+      console.log(oldVal);
     }
   }
 );
+const checkFirst = async (orderNo: string) => {
+  await userCheckIfTheresSameOrderID({ order_no: orderNo }).then((response) => {
+    if (response && response.data && response.data.result.length > 1) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+};
+const addCustomer = (customer_name: string) => {
+  $q.loading.show({
+    message: 'adding Customer order',
+  });
+  try {
+    orderStore.addCustomerName(customer_name);
+    timer = setTimeout(() => {
+      $q.loading.show({
+        backgroundColor: 'positive',
+        messageColor: 'white',
+        message: 'Customer has been Added',
+      });
+
+      timer = setTimeout(() => {
+        $q.loading.hide();
+        timer = void 0;
+      }, 500);
+    }, 200);
+  } catch (error) {
+    console.log(error);
+  }
+};
+const proccedToOrderType = async () => {
+  $q.loading.show({
+    message: 'proccessing Order',
+  });
+  let OrderNumber = generateRandomNumber(1, 1000);
+  if (
+    orderStore.myOrder?.customer_name == null ||
+    (orderStore.myOrder.drinks.length < 1 &&
+      orderStore.myOrder.foods.length < 1)
+  ) {
+    timer = setTimeout(() => {
+      $q.loading.show({
+        backgroundColor: 'negative',
+        messageColor: 'white',
+        message: 'Your Order is not enough check your order or customer name',
+      });
+
+      timer = setTimeout(() => {
+        $q.loading.hide();
+        timer = void 0;
+      }, 500);
+    }, 200);
+    $q.notify({
+      type: 'negative',
+      message: 'Your order Input is not enough',
+    });
+  } else {
+    if (orderStore.myOrder.order_no == null) {
+      orderStore.addOrderID(`${OrderNumber}`);
+    }
+    const check = checkFirst(orderStore.myOrder.order_no || '');
+    if (typeof check === 'boolean' && check === false) {
+      timer = setTimeout(() => {
+        $q.loading.show({
+          backgroundColor: 'positive',
+          messageColor: 'white',
+          message: 'Your Order proceeding to Order Type',
+        });
+
+        timer = setTimeout(() => {
+          $q.loading.hide();
+          timer = void 0;
+        }, 500);
+      }, 200);
+      orderStore.proceedOrder();
+      router.push('/order-type');
+    } else {
+      OrderNumber = generateRandomNumber(1, 1000);
+      orderStore.addOrderID(`${OrderNumber}`);
+      timer = setTimeout(() => {
+        $q.loading.show({
+          backgroundColor: 'positive',
+          messageColor: 'white',
+          message: 'Your Order proceeding to Order Type',
+        });
+
+        timer = setTimeout(() => {
+          $q.loading.hide();
+          timer = void 0;
+        }, 500);
+      }, 200);
+      orderStore.proceedOrder();
+      router.push('/order-type');
+    }
+  }
+};
+onBeforeUnmount(() => {
+  if (timer !== void 0) {
+    clearTimeout(timer);
+    $q.loading.hide();
+  }
+});
+watchEffect(() => {
+  productStore.search = searchItem.value;
+  customers_name.value = orderStore.myOrder?.customer_name || '';
+  if (orderStore.myOrder && orderStore.myOrder?.order_process == 2) {
+    router.push('/order-type');
+  }
+  if (orderStore.myOrder && orderStore.myOrder?.order_process == 3) {
+    router.push('/tables');
+  }
+  if (orderStore.myOrder && orderStore.myOrder?.order_process == 4) {
+    router.push('/reciept');
+  }
+  if (orderStore.myOrder && orderStore.myOrder?.order_process === 1) {
+    router.push('/');
+  }
+});
+onMounted(() => {
+  productStore.getUserProducts('');
+});
 </script>
+<style>
+@media screen and(max-width: 400px) {
+  .drawer-user {
+    width: 100%;
+  }
+}
+@media screen and (min-width: 401px) {
+  .drawer-user {
+    width: 500px;
+  }
+}
+</style>

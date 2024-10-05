@@ -8,6 +8,8 @@ const usersRoute = [
       { path: 'tables', name: 'tables', component: () => import('pages/TablesPage.vue') },
       { path: 'orders', name: 'orders', component: () => import('pages/OrdersPage.vue') },
       { path: 'sales', name: 'sales', component: () => import('pages/SalesPage.vue') },
+      { path: 'order-type', name: 'order_type', component: () => import('pages/UserOrdertype.vue') },
+      { path: 'reciept', name: 'reciept', component: () => import('pages/CustomersReciept.vue') },
     ],
   },
 ];

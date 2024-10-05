@@ -83,4 +83,16 @@ export interface myOrderT{
   order_type:string|null
   customer_name:string|null
   total_amount:number
+  order_process:number
+}
+export interface recieptTypes{
+  order_no:string|null
+  foods:Array<foodOrder|null>
+  drinks:Array<foodOrder|null>
+  table_no:number|null
+  order_type:string|null
+  customer_name:string|null
+  total_amount:number
+  status:string,
+  ctime:string
 }
