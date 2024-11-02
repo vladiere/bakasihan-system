@@ -4,7 +4,7 @@ import { productsDataAllT } from 'src/components/models';
 import { getProducts } from 'src/services/api.services';
 
 export const useProductStore = defineStore('product', () => {
-  const productsMenu = ref<Array<productsDataAllT>>([]);
+  const productsMenu = ref<Array<productsDataAllT | null>>([]);
   const loading = ref(false);
   const search = ref(''); // Removed explicit type annotation
 

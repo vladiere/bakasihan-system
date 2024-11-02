@@ -12,7 +12,7 @@
         <h5 class="receipt-name">RECEIPT</h5>
         <p class="text-underline">{{ created_time.toString() }}</p>
         <img
-          src="../assets/logo.png"
+          src="../../assets/logo.png"
           alt="Entoy's Bakasihan Logo"
           class="main-logo"
         />
@@ -98,43 +98,85 @@
       </div>
     </div>
   </div>
-  <div
-    class="flex justify-evenly goback-btns"
-    v-if="reciept?.status === 'paid'"
-  >
+  <div class="flex justify-evenly goback-btns">
     <q-btn
       label="download"
       icon="download"
       color="positive"
       @click="downloadReciept"
+      v-if="reciept?.status === 'paid'"
     />
     <q-btn label="goback" icon="undo" color="negative" @click="gobackToIndex" />
+    <q-btn
+      label="Pay"
+      icon="money"
+      color="primary"
+      @click="payCash = true"
+      v-if="reciept?.status === 'unpaid'"
+    />
   </div>
+  <q-dialog v-model="payCash" persistent>
+    <q-card>
+      <q-card-section class="q-pt-md">
+        <h6 class="q-mb-none">Pay</h6>
+        <p class="text-h6">
+          {{ formatToCurrency(reciept?.total_amount || 0) }}
+        </p>
+      </q-card-section>
+
+      <q-separator />
+
+      <q-card-section>
+        <q-input
+          dense
+          label="Amount"
+          v-model="cash"
+          type="number"
+          :rules="[(val) => val >= 0 || 'Amount must be positive']"
+          autofocus
+        />
+        <div class="mt-4 text-h6">Change: {{ calculateAmountPaid }}</div>
+      </q-card-section>
+
+      <q-separator />
+
+      <q-card-section>
+        <div class="q-gutter-md">
+          <q-btn
+            label="Cancel"
+            color="grey"
+            @click="(payCash = false), (cash = 0)"
+          />
+          <q-btn label="Confirm" color="primary" @click="confirmPayment" />
+        </div>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
-import {
-  productsOrderDataT,
-  recieptTypes,
-  NotificationOptions,
-} from 'src/components/models';
+import { productsOrderDataT, recieptTypes } from 'src/components/models';
 import { io } from 'socket.io-client';
 import { ref, computed, onMounted, watchEffect } from 'vue';
 import {
   userReciept,
   humanizeDate,
   formatToCurrency,
+  checkOutOrder,
 } from 'src/services/api.services';
 import html2canvas from 'html2canvas';
-import { useOrderStore } from 'src/stores/orderStore';
+import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 
+const route = useRoute();
+const router = useRouter();
 const $q = useQuasar();
-const orderStore = useOrderStore();
+const cash = ref<number>(0);
 const socketServerApiURL = 'http://localhost:7000';
 const reciept = ref<recieptTypes | null>(null);
 const orders = ref<Array<productsOrderDataT | null>>([]);
 const socket = io(socketServerApiURL);
+const payCash = ref(false);
 const company_name = "Entoy's Bakasihan";
 const address_name = 'Buagsong, Cordova, Cebu';
 const contact_no = '0923155321';
@@ -142,11 +184,69 @@ const contact_no = '0923155321';
 const created_time = computed(() => {
   return reciept.value ? humanizeDate(reciept.value.ctime) : '';
 });
+const confirmPayment = async () => {
+  if ((cash.value || 0) < (reciept.value?.total_amount || 0)) {
+    $q.notify({
+      icon: 'close',
+      color: 'negative',
+      message: 'Cash is not Enough',
+    });
+  } else {
+    await checkOutOrder({
+      order_no: reciept.value?.order_no,
+      customer_name: reciept.value?.customer_name,
+      cash: cash.value,
+      total_amount: reciept.value?.total_amount,
+    })
+      .then((response) => {
+        $q.notify({
+          icon: 'check',
+          color: 'positive',
+          message: response.data.message,
+        });
+        const newMessage = {
+          room: reciept.value?.order_no,
+          message: 'Order Has been Checked Out!!',
+        };
+        cash.value = 0;
+        payCash.value = false;
+        handleGetReciept();
+        socket.emit('messageUserOrder', newMessage);
+      })
+      .catch((err) => {
+        $q.notify({
+          icon: 'close',
+          color: 'negative',
+          message: err.response.data.message,
+        });
+      });
+  }
+};
 
 const gobackToIndex = () => {
-  orderStore.resetOrders();
-  window.location.reload();
+  router.push('/admin/adminNewOrders');
 };
+const calculateAmountPaid = computed(() => {
+  if (reciept.value) {
+    const totalAmount = reciept.value.total_amount || 0; // Default to 0 if undefined
+    const cashAmount = cash.value || 0; // Default to 0 if undefined
+
+    if (cashAmount < totalAmount) {
+      return 'Your cash is not enough';
+    } else {
+      const splitChange = Math.floor(totalAmount - cashAmount);
+      if (splitChange === 0) {
+        return 0;
+      } else {
+        const parsedChange = splitChange.toFixed();
+        const fixedData = parsedChange.substring(1, parsedChange.length);
+        const checkData = parseInt(fixedData);
+        return formatToCurrency(checkData);
+      }
+    }
+  }
+  return ''; // Return an empty string or appropriate value if reciept.value is not defined
+});
 
 const downloadReciept = async () => {
   const reciept = document.querySelector(
@@ -177,8 +277,8 @@ const downloadReciept = async () => {
 
 const handleGetReciept = async () => {
   const postData = {
-    order_no: orderStore.myOrder?.order_no,
-    customer_name: orderStore.myOrder?.customer_name,
+    order_no: route.params.order_no,
+    customer_name: route.params.customer_name,
   };
   await userReciept(postData)
     .then((response) => {
@@ -189,32 +289,11 @@ const handleGetReciept = async () => {
       console.log(err);
     });
 };
-const optionsNotifications = (message: string) => {
-  const options: NotificationOptions = {
-    body: message,
-    requireInteraction: true,
-    vibrate: [200, 100, 200],
-    icon: '',
-  };
-  return options;
-};
+
 watchEffect(() => {
   socket.on('connect', () => {
     console.log('socket is connected successfully');
-    socket.emit('joinUserOrderRoom', orderStore.myOrder?.order_no);
-  });
-  socket.on('messageFromAdmin', (data) => {
-    if (Notification.permission == 'granted') {
-      new Notification('New Message', optionsNotifications(data));
-    } else {
-      $q.notify({
-        color: 'positive',
-        textColor: 'white',
-        icon: 'check',
-        message: data,
-      });
-    }
-    handleGetReciept();
+    socket.emit('joinUserOrderRoom', route.params.order_no);
   });
   socket.on('disconnect', () => {
     console.log('Disconnected from the server');
@@ -289,6 +368,14 @@ onMounted(() => {
 }
 .total-amount {
   margin-right: 6%;
+  text-align: center;
+}
+.total-cash {
+  margin-right: 8%;
+  text-align: center;
+}
+.total-change {
+  margin-right: 9%;
   text-align: center;
 }
 .underline {

@@ -15,17 +15,21 @@
       v-else
       class="text-center"
       v-for="category in productStore.productsMenu"
-      :key="category.id"
+      :key="category?.id"
     >
-      <h5>{{ category.category_name }}</h5>
+      <h5>{{ category?.category_name }}</h5>
 
       <div class="row items-center justify-evenly">
+        <span v-if="category && category.products.length < 1"
+          >No Data Available</span
+        >
         <FoodMenuCard
-          v-for="menu in category.products"
-          :key="menu.id"
+          v-else
+          v-for="menu in category?.products"
+          :key="menu?.id"
           :products="menu"
           class="menu-item"
-          @click="addtoCart(menu)"
+          @click="addtoCart(category, menu)"
         />
       </div>
     </div>
@@ -34,9 +38,9 @@
 
 <script setup lang="ts">
 import FoodMenuCard from 'components/FoodMenuCard.vue';
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { productT, foodOrder } from 'src/components/models';
+import { productT, foodOrder, productsDataAllT } from 'src/components/models';
 import { useOrderStore } from 'src/stores/orderStore';
 import { useProductStore } from 'src/stores/productStore';
 import { useQuasar } from 'quasar';
@@ -53,49 +57,41 @@ watch(
 );
 
 let timer: NodeJS.Timeout | undefined;
-const addtoCart = (data: productT) => {
+const addtoCart = (
+  category: productsDataAllT | null,
+  data: productT | null
+) => {
   $q.loading.show({
     message: 'proccessing order',
   });
-  const NewData: foodOrder = {
-    id: data.id,
-    category_id: data.category_id,
-    product_image: data.product_image,
-    product_name: data.product_name,
-    product_description: data.product_description,
-    price: data.price,
-    status: data.status,
+  const newCategory: productsDataAllT | null = {
+    id: category?.id || 0,
+    category_name: category?.category_name || '',
+    products: [],
+  };
+  const NewData: foodOrder | null = {
+    id: data?.id || 0,
+    category_id: data?.category_id || 0,
+    product_image: data?.product_image || '',
+    product_name: data?.product_name || '',
+    product_description: data?.product_description || '',
+    price: data?.price || 0,
+    status: data?.status || 0,
     quantity: 1,
   };
-  if (data.category_id == 1) {
-    timer = setTimeout(() => {
-      $q.loading.show({
-        backgroundColor: 'positive',
-        messageColor: 'white',
-        message: 'Food successfully added to card',
-      });
+  timer = setTimeout(() => {
+    $q.loading.show({
+      backgroundColor: 'positive',
+      messageColor: 'white',
+      message: 'Food successfully added to card',
+    });
 
-      timer = setTimeout(() => {
-        $q.loading.hide();
-        timer = void 0;
-      }, 1000);
-    }, 500);
-    orderStore.addFoods(NewData);
-  } else {
     timer = setTimeout(() => {
-      $q.loading.show({
-        backgroundColor: 'positive',
-        messageColor: 'white',
-        message: 'Drink successfully added to card',
-      });
-
-      timer = setTimeout(() => {
-        $q.loading.hide();
-        timer = void 0;
-      }, 1000);
-    }, 500);
-    orderStore.addDrinks(NewData);
-  }
+      $q.loading.hide();
+      timer = void 0;
+    }, 1000);
+  }, 500);
+  orderStore.addOrders(newCategory, NewData);
 };
 onBeforeUnmount(() => {
   if (timer !== void 0) {

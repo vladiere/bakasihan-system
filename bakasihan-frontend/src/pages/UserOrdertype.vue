@@ -16,13 +16,13 @@
       />
       <div class="btns flex justify-evenly">
         <q-btn
-          icon="arrow-right"
+          icon="undo"
           label="go back"
           color="negative"
           @click="orderStore.previewProcess"
         />
         <q-btn
-          icon="arrow-left"
+          icon="skip_next"
           label="Proceed"
           color="positive"
           @click="proceedToOrder"
@@ -36,11 +36,15 @@
 import { ref, watch, watchEffect } from 'vue';
 import { useOrderStore } from 'src/stores/orderStore';
 import { useRouter } from 'vue-router';
+import { io } from 'socket.io-client';
 import { useQuasar } from 'quasar';
 import { addUserOrder } from 'src/services/api.services';
 const router = useRouter();
 const $q = useQuasar();
 const orderStore = useOrderStore();
+const socketServerApiURL = 'http://localhost:7000';
+const adminRoom = 'bakasihanAdmin';
+const socket = io(socketServerApiURL);
 const order_type = ref<string | null>(null);
 const options = ['dine in', 'take out'];
 const proceedToOrder = () => {
@@ -63,8 +67,7 @@ const proceedToOrder = () => {
 const Reciept = async () => {
   const postData = {
     order_no: orderStore.myOrder?.order_no,
-    foods: JSON.stringify(orderStore.myOrder?.foods),
-    drinks: JSON.stringify(orderStore.myOrder?.drinks),
+    orders: JSON.stringify(orderStore.myOrder?.orders),
     table_no: orderStore.myOrder?.table_no,
     order_type: orderStore.myOrder?.order_type,
     customer_name: orderStore.myOrder?.customer_name,
@@ -78,7 +81,11 @@ const Reciept = async () => {
         message: response.data.message,
       });
       orderStore.proceedToReciept();
-      router.push('/reciept');
+      const newNotifaction = {
+        room: adminRoom,
+        message: 'New Order Has Arrived',
+      };
+      socket.emit('messageAdminOrder', newNotifaction);
     })
     .catch((err) => {
       $q.notify({
@@ -92,6 +99,14 @@ watch(order_type, () => {
 });
 watchEffect(() => {
   order_type.value = orderStore.myOrder?.order_type || '';
+
+  socket.on('connect', () => {
+    console.log('socket is connected successfully');
+    socket.emit('joinAdminOrderRoom', adminRoom);
+  });
+  socket.on('disconnect', () => {
+    console.log('Disconnected from the server');
+  });
 });
 </script>
 

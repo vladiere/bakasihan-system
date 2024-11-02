@@ -9,11 +9,20 @@ export const logout = (val:object) => api.post('/auth/logout',val)
 
 //admin
 export const insertProduct = (val:FormData) => api.post('/admin/insertProduct',val)
+export const insertItems = (val:FormData) => api.post('/admin/insertItems',val)
 export const insertProductCategory = (val:object) => api.post('/admin/insertProductCategory',val)
+export const insertItemCategory = (val:object) => api.post('/admin/insertItemCategory',val)
 export const insertCustomerTables = (val:object) => api.post('/admin/insertCustomerTables',val)
+export const checkOutOrder = (val:object) => api.post('/admin/checkOutOrder',val)
 export const adminGetAllProductsCategories = (param:object) =>api.get('/admin/adminGetAllProductsCategories',param)
+export const adminGetAllItemsCategories = (param:object) =>api.get('/admin/adminGetAllItemsCategories',param)
+export const adminGetAllItems = (param:object) =>api.get('/admin/adminGetAllItems',param)
 export const adminGetAllProducts = (param:object) =>api.get('/admin/adminGetAllProducts',param)
+export const adminNewOrdersUnpaid = (param:object) =>api.get('/admin/adminNewOrdersUnpaid',param)
+export const adminNewOrdersPaid = (param:object) =>api.get('/admin/adminNewOrdersPaid',param)
 export const adminCustomersTable = () =>api.get('/admin/adminCustomersTable')
+export const getAdminItemDistictCategory = () =>api.get('/admin/getAdminItemDistictCategory')
+export const adminGetAllDataDashBoardRequired = () =>api.get('/admin/adminGetAllDataDashBoardRequired')
 export const userCustomersTable = () =>api.get('/user/userCustomersTable')
 
 //user

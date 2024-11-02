@@ -3,7 +3,7 @@
     <div class="justify-start">
       <q-btn
         label="Goback"
-        icon="goback"
+        icon="undo"
         color="secondary"
         @click="orderStore.previewProcess()"
       />
@@ -89,17 +89,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watchEffect } from 'vue';
 import { addUserOrder, userCustomersTable } from 'src/services/api.services';
 import TableComponent from 'components/TableComponent.vue';
+import { io } from 'socket.io-client';
 import { customersTableDataT } from 'src/components/models';
 import { useOrderStore } from 'src/stores/orderStore';
 import { useQuasar } from 'quasar';
-import { useRouter } from 'vue-router';
 
-const router = useRouter();
 const $q = useQuasar();
 const customerTables = ref<Array<customersTableDataT>>([]);
+const socketServerApiURL = 'http://localhost:7000';
+const adminRoom = 'bakasihanAdmin';
+const socket = io(socketServerApiURL);
 const isSelected = ref(false);
 const processDialog = ref(false);
 const orderStore = useOrderStore();
@@ -118,8 +120,7 @@ const handleGetCustomerTables = async () => {
 const ProceedtoReciept = async () => {
   const postData = {
     order_no: orderStore.myOrder?.order_no,
-    foods: JSON.stringify(orderStore.myOrder?.foods),
-    drinks: JSON.stringify(orderStore.myOrder?.drinks),
+    orders: JSON.stringify(orderStore.myOrder?.orders),
     table_no: orderStore.myOrder?.table_no,
     order_type: orderStore.myOrder?.order_type,
     customer_name: orderStore.myOrder?.customer_name,
@@ -134,7 +135,11 @@ const ProceedtoReciept = async () => {
       });
       processDialog.value = false;
       orderStore.proceedToReciept();
-      router.push('/reciept');
+      const newNotifaction = {
+        room: adminRoom,
+        message: 'New Order Has Arrived',
+      };
+      socket.emit('messageAdminOrder', newNotifaction);
     })
     .catch((err) => {
       $q.notify({
@@ -157,5 +162,14 @@ const clicked = () => {
 };
 onMounted(() => {
   handleGetCustomerTables();
+});
+watchEffect(() => {
+  socket.on('connect', () => {
+    console.log('socket is connected successfully');
+    socket.emit('joinAdminOrderRoom', adminRoom);
+  });
+  socket.on('disconnect', () => {
+    console.log('Disconnected from the server');
+  });
 });
 </script>

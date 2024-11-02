@@ -1,0 +1,385 @@
+<template>
+  <q-page padding>
+    <q-btn
+      color="primary"
+      icon="add"
+      label="Add Item"
+      style="margin-bottom: 2%"
+      @click="openItemsAddDialog()"
+    />
+    <q-input
+      filled
+      v-model="search"
+      label="Search"
+      debounce="1000"
+      @input="onSearch"
+    />
+    <q-table
+      title="Items's lists"
+      :rows-per-page-options="[5, 10, 20, 50]"
+      :rows="rows"
+      :columns="columns"
+      :loading="loading"
+      v-model:pagination="pagination"
+      :row-key="(row:ItemsDataT) => row.id"
+      @request="handleRequest"
+    >
+      <template v-slot:body-cell-item_picture="props">
+        <q-td>
+          <img
+            :src="getImage(props.row.item_picture)"
+            alt=""
+            style="width: 100%; height: 100%"
+          />
+        </q-td>
+      </template>
+      <template v-slot:body-cell-price="props">
+        <q-td>
+          <span>{{ formatToCurrency(props.row.price | 0) }}</span>
+        </q-td>
+      </template>
+      <template v-slot:body-cell-total_amount="props">
+        <q-td>
+          <span>{{ formatToCurrency(props.row.total_amount | 0) }}</span>
+        </q-td>
+      </template>
+      <template v-slot:body-cell-actions="props">
+        <q-td>
+          <q-btn
+            color="green-7"
+            icon="visibility"
+            label="View"
+            @click="view(props.row)"
+          />
+        </q-td>
+      </template>
+    </q-table>
+  </q-page>
+  <q-dialog v-model="ItemsAddDialog">
+    <q-card>
+      <q-card-section>Add Item</q-card-section>
+      <q-separator />
+      <q-card-section>
+        <q-form
+          class="col column q-gutter-y-md full-width"
+          @submit="handleInsertItem"
+        >
+          <img
+            :src="preview"
+            alt="preview"
+            height="50%"
+            width="50%"
+            v-if="preview"
+          />
+          <img
+            src="../../assets/logo.png"
+            alt="default"
+            height="50%"
+            width="50%"
+            v-else
+          />
+          <input
+            type="file"
+            name=""
+            id=""
+            @change="handleImageChange"
+            accept="image/jpg,image/png,image/jpeg"
+          />
+          <q-select
+            v-model="dataInputs.item_category_id"
+            label="Select Category"
+            :options="option"
+            style="margin-bottom: 5%"
+            @update:model-value="handleSelect"
+          />
+          <q-input
+            v-model="dataInputs.item_name"
+            color="dark"
+            label="Item Name"
+            class="col"
+          />
+          <q-input
+            v-model="dataInputs.quantity"
+            color="dark"
+            label="Quantity"
+            class="col"
+            type="number"
+            :rules="[
+              (val) => (!!val && !isNaN(val)) || 'Please enter a valid number',
+            ]"
+          />
+          <q-input
+            v-model="dataInputs.price"
+            color="dark"
+            label="Price"
+            class="col"
+            type="number"
+            :rules="[
+              (val) => (!!val && !isNaN(val)) || 'Please enter a valid number',
+            ]"
+          />
+        </q-form>
+      </q-card-section>
+      <q-separator />
+      <q-card-section>
+        <q-btn
+          label="close"
+          color="negative"
+          icon="close"
+          :disable="loading"
+          :loading="loading"
+          @click="ItemsAddDialog = false"
+        /><q-btn
+          label="Submit"
+          icon="check"
+          color="positive"
+          :disable="loading"
+          :loading="loading"
+          @click="handleInsertItem"
+        />
+      </q-card-section>
+    </q-card>
+  </q-dialog>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue';
+import {
+  adminGetAllItems,
+  insertItems,
+  getAdminItemDistictCategory,
+  getImage,
+  formatToCurrency,
+} from 'src/services/api.services';
+import {
+  TableRequestProps,
+  ItemsDataT,
+  ItemsT,
+  categoryT,
+} from 'src/components/models';
+import { useQuasar } from 'quasar';
+
+const search = ref<string>('');
+const loading = ref(false);
+const ItemsAddDialog = ref(false);
+const $q = useQuasar();
+const viewData = ref<ItemsT | null>(null);
+const rows = ref<Array<ItemsDataT>>([]);
+const option = ref<Array<optionT>>([]);
+const selectedOption = ref<optionT | null>(null);
+const itemCategory = ref<Array<categoryT>>([]);
+const preview = ref('');
+type formdataT = {
+  item_category_id: number | null;
+  item_picture: File | null;
+  item_name: string;
+  quantity: number;
+  price: number;
+};
+type optionT = {
+  label: string;
+  value: number;
+};
+interface Column {
+  name: string;
+  label: string;
+  align: 'left' | 'center' | 'right';
+  field: string | ((row: ItemsDataT) => ItemsDataT);
+  sortable?: boolean;
+}
+const dataInputs = ref<formdataT>({
+  item_category_id: null,
+  item_picture: null,
+  item_name: '',
+  quantity: 0,
+  price: 0,
+});
+const handleSelect = (optionData: optionT) => {
+  selectedOption.value =
+    option.value.find((opt) => opt.value === optionData.value) || null;
+};
+
+const openItemsAddDialog = () => {
+  ItemsAddDialog.value = true;
+  option.value = []; // Clear previous options to avoid duplicates
+  itemCategory.value.forEach(
+    (element: { id: number; category_name: string }) => {
+      option.value.push({ label: element.category_name, value: element.id });
+    }
+  );
+};
+const handleImageChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement | null;
+  if (target && target.files && target.files.length > 0) {
+    // Check if the selected file is an image
+    const file = target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      preview.value = URL.createObjectURL(file);
+      dataInputs.value.item_picture = file;
+    }
+  }
+};
+const pagination = ref({
+  page: 1,
+  rowsPerPage: 5,
+  sortBy: 'id',
+  descending: false,
+  rowsNumber: 0,
+});
+const columns: Column[] = [
+  {
+    name: 'id',
+    label: 'ID',
+    align: 'left',
+    field: 'id',
+    sortable: false,
+  },
+  {
+    name: 'category_name',
+    label: 'Category Name',
+    align: 'left',
+    field: 'category_name',
+    sortable: false,
+  },
+  {
+    name: 'item_picture',
+    label: 'Item Picture',
+    align: 'left',
+    field: 'item_picture',
+    sortable: false,
+  },
+  {
+    name: 'item_name',
+    label: 'Item Name',
+    align: 'left',
+    field: 'item_name',
+    sortable: false,
+  },
+  {
+    name: 'quantity',
+    label: 'Quantity',
+    align: 'left',
+    field: 'quantity',
+    sortable: false,
+  },
+  {
+    name: 'remaining_quantity',
+    label: 'Remaining Quantity',
+    align: 'left',
+    field: 'remaining_quantity',
+    sortable: false,
+  },
+  {
+    name: 'price',
+    label: 'Price',
+    align: 'left',
+    field: 'price',
+    sortable: false,
+  },
+  {
+    name: 'total_amount',
+    label: 'Total Amount',
+    align: 'left',
+    field: 'total_amount',
+    sortable: false,
+  },
+  {
+    name: 'actions',
+    label: 'Action',
+    align: 'center',
+    field: (row: ItemsDataT) => row, // Example field function
+  },
+];
+
+const onRequest = async (search = '', page = 0, perpage = 5) => {
+  loading.value = true;
+  await adminGetAllItems({
+    params: {
+      page,
+      per_page: perpage,
+      search: search, // Include the search term
+    },
+  })
+    .then((response) => {
+      loading.value = false;
+      const data = response.data;
+      rows.value = data.items;
+      pagination.value.page = data.current_page;
+      pagination.value.rowsNumber = data.total;
+      pagination.value.rowsPerPage = data.per_page;
+    })
+    .catch((err) => {
+      loading.value = false;
+      console.log(err);
+    });
+};
+const handleRequest = (props: TableRequestProps) => {
+  pagination.value.rowsPerPage = props.pagination.rowsPerPage;
+  onRequest(search.value, props.pagination.page, props.pagination.rowsPerPage);
+};
+const onSearch = () => {
+  pagination.value.page = 1; // Reset to the first page
+  onRequest(search.value, pagination.value.page, pagination.value.rowsPerPage);
+};
+watch(search, () => {
+  onSearch();
+});
+onMounted(() => {
+  onRequest(search.value, pagination.value.page, pagination.value.rowsPerPage);
+  getCategories();
+});
+
+const view = (data: ItemsT) => {
+  console.log(data);
+  viewData.value = { ...data };
+};
+
+const handleInsertItem = async () => {
+  let data = new FormData();
+  data.append('item_category_id', `${selectedOption.value?.value}`);
+  if (dataInputs.value.item_picture) {
+    data.append('item_picture', dataInputs.value.item_picture);
+  }
+  data.append('item_name', dataInputs.value.item_name);
+  data.append('quantity', `${dataInputs.value.quantity}`);
+  data.append('price', `${dataInputs.value.price}`);
+
+  loading.value = true;
+  await insertItems(data)
+    .then((response) => {
+      loading.value = false;
+      ItemsAddDialog.value = false;
+      onRequest(
+        search.value,
+        pagination.value.page,
+        pagination.value.rowsPerPage
+      );
+      $q.notify({
+        color: 'positive',
+        textColor: 'white',
+        position: 'top',
+        icon: 'check',
+        message: response.data.message,
+      });
+    })
+    .catch((error) => {
+      loading.value = false;
+
+      $q.notify({
+        color: 'negative',
+        textColor: 'white',
+        icon: 'close',
+        message: error.response.data.message,
+      });
+    });
+};
+const getCategories = async () => {
+  loading.value = true;
+  await getAdminItemDistictCategory().then((res) => {
+    loading.value = false;
+    itemCategory.value = res.data.categories;
+  });
+};
+</script>
+
+<style scoped></style>
