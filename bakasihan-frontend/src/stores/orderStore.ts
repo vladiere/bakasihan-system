@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { myOrderT, foodOrder } from 'src/components/models';
+import { productsDataAllT } from '../components/models';
 
 export const useOrderStore = defineStore('order', () => {
   // Initialize order process
@@ -9,8 +10,7 @@ export const useOrderStore = defineStore('order', () => {
   const storedOrder = localStorage.getItem('myOrder');
   const myOrder = ref<myOrderT | null>(storedOrder ? JSON.parse(storedOrder) : {
     order_no: null,
-    foods: [],
-    drinks: [],
+    orders: [],
     table_no: null,
     order_type: null,
     customer_name: null,
@@ -23,65 +23,53 @@ export const useOrderStore = defineStore('order', () => {
     localStorage.setItem('myOrder', JSON.stringify(newOrder));
   }, { deep: true });
 
-  const addFoods = (order: foodOrder) => {
+  const addOrders = (category: productsDataAllT, order: foodOrder) => {
     if (!myOrder.value) return;
 
-    const existingProduct = myOrder.value.foods.find(prod => prod?.id === order.id);
-    if (existingProduct) {
-      // Update quantity if the product already exists
-      existingProduct.quantity = (existingProduct.quantity || 0) + 1;
-      myOrder.value.total_amount += existingProduct.price || 0;
+    // Find the index of the existing category in the orders array
+    const categoryIndex = myOrder.value.orders.findIndex(c => c?.id === category.id);
+
+    if (categoryIndex === -1) {
+      // If category doesn't exist, add it with the product
+      myOrder.value.orders.push({
+        ...category,
+        products: [order], // Add the new product in the category
+      });
+      myOrder.value.total_amount += order.price || 0; // Update the total amount
     } else {
-      // Add new product if it doesn't exist
-      myOrder.value.foods.push(order);
-      myOrder.value.total_amount += order.price || 0;
-    }
-  };
+      // Category exists, find the product in this category
+      const existingProduct = myOrder.value?.orders[categoryIndex]?.products.find(prod => prod?.id === order.id);
 
-  const addDrinks = (order: foodOrder) => {
-    if (!myOrder.value) return;
-
-    const existingProduct = myOrder.value.drinks.find(prod => prod?.id === order.id);
-    if (existingProduct) {
-      // Update quantity if the product already exists
-      existingProduct.quantity = (existingProduct.quantity || 0) + 1;
-      myOrder.value.total_amount += existingProduct.price || 0;
-    } else {
-      // Add new product if it doesn't exist
-      myOrder.value.drinks.push(order);
-      myOrder.value.total_amount += order.price || 0;
-    }
-  };
-
-  const removeDrinks = (order: number) => {
-    if (myOrder.value) {
-      const index = myOrder.value.drinks.findIndex((drink) => drink?.id === order);
-      if (index !== -1) {
-        const drink = myOrder.value.drinks[index];
-        if (drink && drink?.quantity > 1) {
-          myOrder.value.total_amount -= drink.price * drink.quantity;
-          myOrder.value.drinks.splice(index, 1);
-        } else {
-          const removedDrink = myOrder.value.drinks.splice(index, 1)[0];
-          myOrder.value.total_amount -= removedDrink?.price || 0;
-        }
+      if (existingProduct) {
+        // If product exists, increment its quantity
+        existingProduct.quantity = (existingProduct.quantity || 0) + 1;
+        myOrder.value.total_amount += existingProduct.price || 0;
+      } else {
+        // If product doesn't exist, add it to the category
+        myOrder.value?.orders[categoryIndex]?.products.push(order);
+        myOrder.value.total_amount += order.price || 0;
       }
     }
   };
 
-  const removeFoods = (order: number) => {
-    if (myOrder.value) {
-      const index = myOrder.value.foods.findIndex((food) => food?.id === order);
-      if (index !== -1) {
-        const food = myOrder.value.foods[index];
-        if (food && food?.quantity > 1) {
-          myOrder.value.total_amount -= food.price * food.quantity;
-          myOrder.value.foods.splice(index, 1);
-        } else {
-          const removedFood = myOrder.value.foods.splice(index, 1)[0];
-          myOrder.value.total_amount -= removedFood?.price || 0;
-        }
-      }
+  const removeOrders = (categoryID: number, orderID: number) => {
+    if (!myOrder.value) return;
+
+    // Find the category index
+    const categoryIndex = myOrder.value.orders.findIndex(c => c?.id === categoryID);
+    if (categoryIndex === -1) return; // Exit if the category is not found
+
+    // Find the product index in the category's products array
+    const productIndex = myOrder.value.orders[categoryIndex]?.products.findIndex(prod => prod?.id === orderID);
+    if (productIndex === -1 || productIndex === undefined) return; // Exit if the product is not found
+      // Remove the product from the category if its quantity is 1 or less
+      const removedProduct = myOrder.value?.orders[categoryIndex]?.products.splice(productIndex, 1)[0];
+      // Adjust the total amount by the removed product's price
+      myOrder.value.total_amount -= Math.floor((removedProduct?.price || 0) * (removedProduct?.quantity || 0)) || 0;
+
+    // Optionally, if there are no products left in the category, you can remove the entire category
+    if (myOrder.value?.orders[categoryIndex]?.products.length === 0) {
+      myOrder.value.orders.splice(categoryIndex, 1);
     }
   };
 
@@ -91,79 +79,51 @@ export const useOrderStore = defineStore('order', () => {
     }
   };
 
-  const subtractQuantity = (orderID: number, param: string) => {
+  const subtractQuantity = (categoryID:number,orderID: number) => {
     if (!myOrder.value) return;
 
-    switch (param) {
-      case 'food': {
-        const index = myOrder.value.foods.findIndex((food) => food?.id === orderID);
-        if (index !== -1) {
-          const foodItem = myOrder.value.foods[index];
-          if (foodItem) {
-            if (foodItem.quantity > 1) {
-              foodItem.quantity--;
-              myOrder.value.total_amount -= foodItem.price || 0;
-            }
-          }
-        }
-        break;
-      }
-      case 'drink': {
-        const index = myOrder.value.drinks.findIndex((drink) => drink?.id === orderID);
-        if (index !== -1) {
-          const drinkItem = myOrder.value.drinks[index];
-          if (drinkItem) {
-            if (drinkItem.quantity > 1) {
-              drinkItem.quantity--;
-              myOrder.value.total_amount -= drinkItem.price || 0;
-            }
-          }
-        }
-        break;
-      }
-      default:
-        console.warn(`Unhandled case for param: ${param}`);
-        break;
+    // Find the category index
+    const categoryIndex = myOrder.value.orders.findIndex(c => c?.id === categoryID);
+    if (categoryIndex === -1) return; // Exit if the category is not found
+
+    // Find the product index in the category's products array
+    const productIndex = myOrder.value.orders[categoryIndex]?.products.findIndex(prod => prod?.id === orderID);
+    if (productIndex === -1 || productIndex === undefined) return; // Exit if the product is not found
+
+    const product = myOrder.value?.orders[categoryIndex]?.products[productIndex];
+
+if (product?.quantity && product.quantity > 1) {
+      // Decrease the product's quantity
+      product.quantity -= 1;
+      // Adjust the total amount
+      myOrder.value.total_amount -= product.price || 0;
     }
   };
 
-  const addQuantity = (orderId: number, param: string) => {
+  const addQuantity = (categoryID:number,orderId: number) => {
     if (!myOrder.value) return;
 
-    switch (param) {
-      case 'food': {
-        const index = myOrder.value.foods.findIndex((food) => food?.id === orderId);
-        if (index !== -1) {
-          const foodItem = myOrder.value.foods[index];
-          if (foodItem) {
-            foodItem.quantity++;
-            myOrder.value.total_amount += foodItem.price || 0;
-          }
-        }
-        break;
-      }
-      case 'drink': {
-        const index = myOrder.value.drinks.findIndex((drink) => drink?.id === orderId);
-        if (index !== -1) {
-          const drinkItem = myOrder.value.drinks[index];
-          if (drinkItem) {
-            drinkItem.quantity++;
-            myOrder.value.total_amount += drinkItem.price || 0;
-          }
-        }
-        break;
-      }
-      default:
-        console.warn(`Unhandled case for param: ${param}`);
-        break;
+    // Find the category index
+    const categoryIndex = myOrder.value.orders.findIndex(c => c?.id === categoryID);
+    if (categoryIndex === -1) return; // Exit if the category is not found
+
+    // Find the product index in the category's products array
+    const productIndex = myOrder.value.orders[categoryIndex]?.products.findIndex(prod => prod?.id === orderId);
+    if (productIndex === -1 || productIndex === undefined) return; // Exit if the product is not found
+
+    const product = myOrder.value?.orders[categoryIndex]?.products[productIndex];
+    if (product?.quantity && product.quantity > 0) {
+      // Decrease the product's quantity
+      product.quantity += 1;
+      // Adjust the total amount
+      myOrder.value.total_amount += product.price || 0;
     }
   };
 
   const resetOrders = () => {
     myOrder.value = {
       order_no: null,
-      foods: [],
-      drinks: [],
+      orders: [],
       table_no: null,
       order_type: null,
       customer_name: null,
@@ -215,18 +175,16 @@ export const useOrderStore = defineStore('order', () => {
 
   return {
     myOrder,
-    addFoods,
+    addOrders,
     proceedOrder,
     previewProcess,
-    addDrinks,
     addOrderID,
     addTableNo,
     removeTable,
     proceedToReciept,
     resetOrders,
-    removeDrinks,
+    removeOrders,
     addOrderType,
-    removeFoods,
     addCustomerName,
     subtractQuantity,
     addQuantity

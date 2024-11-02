@@ -10,7 +10,7 @@
         @input="onSearch"
       />
       <q-table
-        title="Residents Profiles"
+        title="Product's Lists"
         :rows-per-page-options="[5, 10, 20, 50]"
         :rows="rows"
         :columns="columns"

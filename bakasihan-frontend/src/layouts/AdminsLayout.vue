@@ -5,7 +5,13 @@
         <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" />
 
         <q-toolbar-title>Admin</q-toolbar-title>
-        <q-btn-dropdown flat dense rounded class="q-px-md" label="Settings">
+        <q-btn-dropdown
+          flat
+          dense
+          rounded
+          class="q-px-md"
+          :label="authStore.user ? authStore.user.username : 'need to Login'"
+        >
           <q-list>
             <q-item clickable v-close-popup @click="onItemClick">
               <q-item-section>
@@ -29,13 +35,28 @@
         >Entoy's Bakasihan</span
       >
       <q-list class="rounded-borders q-mt-lg">
-        <q-item clickable v-ripple>
+        <q-item clickable v-ripple :to="{ name: 'admin_index' }">
           <q-item-section avatar>
             <q-icon color="accent" name="mdi-view-dashboard" />
           </q-item-section>
 
           <q-item-section>Dashboard</q-item-section>
         </q-item>
+        <q-expansion-item expand-separator>
+          <template v-slot:header>
+            <q-item-section avatar>
+              <q-icon color="accent" name="mdi-list-box" />
+            </q-item-section>
+            <q-item-section>Orders</q-item-section>
+          </template>
+          <q-list bordered separator>
+            <AdminsLayoutListComponent
+              v-for="(item, index) in orders_props"
+              :key="index"
+              v-bind="item"
+            />
+          </q-list>
+        </q-expansion-item>
         <q-expansion-item expand-separator>
           <template v-slot:header>
             <q-item-section avatar>
@@ -106,18 +127,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, watchEffect } from 'vue';
 import { logout } from 'src/services/api.services';
 import { useAuthStore } from 'src/stores/authStore';
+import { NotificationOptions } from 'src/components/models';
+import { io } from 'socket.io-client';
 import AdminsLayoutListComponent, {
   AdminsLayoutListInterface,
 } from 'components/AdminsLayoutListComponent.vue';
 import { useQuasar, QSpinnerGears } from 'quasar';
 import { useRouter } from 'vue-router';
+import { useNewOrderStore } from 'src/stores/NewOrdersStore';
 
 const $q = useQuasar();
-
+const newOrderStore = useNewOrderStore();
 const router = useRouter();
+const socketServerApiURL = 'http://localhost:7000';
+const adminRoom = 'bakasihanAdmin';
+const socket = io(socketServerApiURL);
 const authStore = useAuthStore();
 const leftDrawerOpen = ref(false);
 
@@ -158,6 +185,18 @@ const handleLogout = async () => {
       });
     });
 };
+const orders_props = ref<AdminsLayoutListInterface[]>([
+  {
+    title: 'New Orders',
+    icon_name: 'mdi-list-status',
+    path_name: 'new_orders',
+  },
+  {
+    title: 'Order History',
+    icon_name: 'mdi-history',
+    path_name: 'tables',
+  },
+]);
 
 const casheirs_props = ref<AdminsLayoutListInterface[]>([
   {
@@ -222,17 +261,55 @@ const inventory_props = ref<AdminsLayoutListInterface[]>([
   {
     title: 'Items List',
     icon_name: 'mdi-list-box',
-    path_name: 'list',
+    path_name: 'items_list',
   },
   {
     title: 'Category',
     icon_name: 'mdi-invoice-list-outline',
-    path_name: 'category',
-  },
-  {
-    title: 'Tables',
-    icon_name: 'mdi-table-column-width',
-    path_name: 'tables',
+    path_name: 'items_category',
   },
 ]);
+onMounted(() => {
+  authStore.getUserAuth();
+  newOrderStore.onRequest(
+    '',
+    newOrderStore.pagination.page,
+    newOrderStore.pagination.rowsPerPage
+  );
+});
+const optionsNotifications = (message: string) => {
+  const options: NotificationOptions = {
+    body: message,
+    requireInteraction: true,
+    vibrate: [200, 100, 200],
+    icon: '',
+  };
+  return options;
+};
+watchEffect(() => {
+  socket.on('connect', () => {
+    console.log('socket is connected successfully');
+    socket.emit('joinAdminOrderRoom', adminRoom);
+  });
+  socket.on('messageFromUser', (data) => {
+    if (Notification.permission == 'granted') {
+      new Notification('New Message', optionsNotifications(data));
+    } else {
+      $q.notify({
+        color: 'positive',
+        textColor: 'white',
+        icon: 'check',
+        message: data,
+      });
+    }
+    newOrderStore.onRequest(
+      '',
+      newOrderStore.pagination.page,
+      newOrderStore.pagination.rowsPerPage
+    );
+  });
+  socket.on('disconnect', () => {
+    console.log('Disconnected from the server');
+  });
+});
 </script>

@@ -34,7 +34,10 @@
       <q-card-section>Add Category</q-card-section>
       <q-separator />
       <q-card-section>
-        <q-form class="col column q-gutter-y-md full-width">
+        <q-form
+          class="col column q-gutter-y-md full-width"
+          @submit="handleInsertProductCategory"
+        >
           <q-input
             v-model="formdata.category_name"
             color="dark"
@@ -68,7 +71,10 @@
       <q-card-section>Add Food</q-card-section>
       <q-separator />
       <q-card-section>
-        <q-form class="col column q-gutter-y-md full-width">
+        <q-form
+          class="col column q-gutter-y-md full-width"
+          @submit="handleSubmitProduct"
+        >
           <img
             :src="preview"
             alt="preview"
@@ -118,6 +124,9 @@
             label="Price"
             class="col"
             type="number"
+            :rules="[
+              (val) => (!!val && !isNaN(val)) || 'Please enter a valid number',
+            ]"
           />
         </q-form>
       </q-card-section>
@@ -146,13 +155,19 @@
       <q-card-section>Add Table</q-card-section>
       <q-separator />
       <q-card-section>
-        <q-form class="col column q-gutter-y-md full-width">
+        <q-form
+          class="col column q-gutter-y-md full-width"
+          @submit="handleInsertCustomerTable"
+        >
           <q-input
             v-model="table_no"
             color="dark"
-            label="Table Number"
+            label="Price"
             class="col"
             type="number"
+            :rules="[
+              (val) => (!!val && !isNaN(val)) || 'Please enter a valid number',
+            ]"
           />
         </q-form>
       </q-card-section>

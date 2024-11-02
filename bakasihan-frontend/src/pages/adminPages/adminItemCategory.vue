@@ -1,5 +1,12 @@
 <template>
   <q-page padding>
+    <q-btn
+      color="primary"
+      icon="add"
+      label="Add Item's Category"
+      style="margin-bottom: 2%"
+      @click="categoryDialog = true"
+    />
     <q-input
       filled
       v-model="search"
@@ -8,7 +15,7 @@
       @input="onSearch"
     />
     <q-table
-      title="Product's Category lists"
+      title="Items's Category lists"
       :rows-per-page-options="[5, 10, 20, 50]"
       :rows="rows"
       :columns="columns"
@@ -29,21 +36,67 @@
       </template>
     </q-table>
   </q-page>
+  <q-dialog v-model="categoryDialog">
+    <q-card>
+      <q-card-section>Add Category</q-card-section>
+      <q-separator />
+      <q-card-section>
+        <q-form
+          class="col column q-gutter-y-md full-width"
+          @submit="handleInsertItemCategory"
+        >
+          <q-input
+            v-model="formdata.category_name"
+            color="dark"
+            label="Category name"
+            class="col"
+          />
+        </q-form>
+      </q-card-section>
+      <q-separator />
+      <q-card-section>
+        <q-btn
+          label="close"
+          color="negative"
+          icon="close"
+          :disable="loading"
+          :loading="loading"
+          @click="categoryDialog = false"
+        /><q-btn
+          label="Submit"
+          icon="check"
+          color="positive"
+          :disable="loading"
+          :loading="loading"
+          @click="handleInsertItemCategory"
+        />
+      </q-card-section>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import { adminGetAllProductsCategories } from 'src/services/api.services';
+import {
+  adminGetAllItemsCategories,
+  insertItemCategory,
+} from 'src/services/api.services';
 import {
   TableRequestProps,
   categoryDataT,
   categoryT,
 } from 'src/components/models';
+import { useQuasar } from 'quasar';
 
 const search = ref<string>('');
 const loading = ref(false);
+const categoryDialog = ref(false);
+const $q = useQuasar();
 const viewData = ref<categoryT | null>(null);
 const rows = ref<Array<categoryDataT>>([]);
+const formdata = ref({
+  category_name: '',
+});
 interface Column {
   name: string;
   label: string;
@@ -83,7 +136,7 @@ const columns: Column[] = [
 
 const onRequest = async (search = '', page = 0, perpage = 5) => {
   loading.value = true;
-  await adminGetAllProductsCategories({
+  await adminGetAllItemsCategories({
     params: {
       page,
       per_page: perpage,
@@ -103,7 +156,6 @@ const onRequest = async (search = '', page = 0, perpage = 5) => {
       console.log(err);
     });
 };
-
 const handleRequest = (props: TableRequestProps) => {
   pagination.value.rowsPerPage = props.pagination.rowsPerPage;
   onRequest(search.value, props.pagination.page, props.pagination.rowsPerPage);
@@ -122,6 +174,36 @@ onMounted(() => {
 const view = (data: categoryT) => {
   console.log(data);
   viewData.value = { ...data };
+};
+
+const handleInsertItemCategory = async () => {
+  loading.value = true;
+  await insertItemCategory({ category_name: formdata.value.category_name })
+    .then((response) => {
+      loading.value = false;
+      formdata.value.category_name = '';
+      categoryDialog.value = false;
+      onRequest(
+        search.value,
+        pagination.value.page,
+        pagination.value.rowsPerPage
+      );
+      $q.notify({
+        color: 'positive',
+        textColor: 'white',
+        position: 'top',
+        icon: 'check',
+        message: response.data.message,
+      });
+    })
+    .catch((error) => {
+      $q.notify({
+        color: 'negative',
+        textColor: 'white',
+        icon: 'close',
+        message: error.response.data.message,
+      });
+    });
 };
 </script>
 

@@ -156,16 +156,21 @@
           border-right: 1px solid #ddd;
         "
       >
-        <q-list bordered separator>
-          <h6 class="text-center">Food</h6>
-          <q-item v-for="food in orderStore.myOrder?.foods" :key="food?.id">
+        <q-list
+          bordered
+          separator
+          v-for="order in orderStore.myOrder.orders"
+          :key="order?.id"
+        >
+          <h6 class="text-center">{{ order?.category_name }}</h6>
+          <q-item v-for="prod in order?.products" :key="prod?.id">
             <q-item-section avatar>
               <q-avatar color="accent" text-color="white">
-                <img :src="getImage(food?.product_image || '')" alt="" />
+                <img :src="getImage(prod?.product_image || '')" alt="" />
               </q-avatar>
             </q-item-section>
 
-            <q-item-section>{{ food?.product_name }}</q-item-section>
+            <q-item-section>{{ prod?.product_name }}</q-item-section>
 
             <q-item-section side>
               <div class="row items-center q-gutter-x-sm">
@@ -174,68 +179,28 @@
                   flat
                   dense
                   icon="mdi-minus"
-                  @click="orderStore.subtractQuantity(food?.id || 0, 'food')"
+                  @click="
+                    orderStore.subtractQuantity(order?.id || 0, prod?.id || 0)
+                  "
                 />
                 <span class="text-weight-normal text-body1">{{
-                  food?.quantity
+                  prod?.quantity
                 }}</span>
                 <q-btn
                   size="sm"
                   flat
                   dense
                   icon="mdi-plus"
-                  @click="orderStore.addQuantity(food?.id || 0, 'food')"
+                  @click="orderStore.addQuantity(order?.id || 0, prod?.id || 0)"
                 />
                 <q-btn
                   size="sm"
                   flat
                   dense
                   icon="mdi-close"
-                  @click="orderStore.removeFoods(food?.id || 0)"
-                />
-              </div>
-            </q-item-section>
-          </q-item>
-        </q-list>
-        <q-list bordered separator>
-          <h6 class="text-center">Drinks</h6>
-          <q-item v-for="drink in orderStore.myOrder?.drinks" :key="drink?.id">
-            <q-item-section avatar>
-              <q-avatar color="accent" text-color="white">
-                <img
-                  :src="getImage(drink?.product_image || '')"
-                  alt="product image"
-                />
-              </q-avatar>
-            </q-item-section>
-
-            <q-item-section>{{ drink?.product_name }}</q-item-section>
-
-            <q-item-section side>
-              <div class="row items-center q-gutter-x-sm">
-                <q-btn
-                  size="sm"
-                  flat
-                  dense
-                  icon="mdi-minus"
-                  @click="orderStore.subtractQuantity(drink?.id || 0, 'drink')"
-                />
-                <span class="text-weight-normal text-body1">{{
-                  drink?.quantity
-                }}</span>
-                <q-btn
-                  size="sm"
-                  flat
-                  dense
-                  icon="mdi-plus"
-                  @click="orderStore.addQuantity(drink?.id || 0, 'drink')"
-                />
-                <q-btn
-                  size="sm"
-                  flat
-                  dense
-                  icon="mdi-close"
-                  @click="orderStore.removeDrinks(drink?.id || 0)"
+                  @click="
+                    orderStore.removeOrders(order?.id || 0, prod?.id || 0)
+                  "
                 />
               </div>
             </q-item-section>
@@ -309,10 +274,18 @@
           >
         </div>
         <div class="row items-center q-gutter-x-md q-pb-sm">
-          <q-btn dense rounded color="grey-8" label="hold" class="col" />
           <q-btn
             dense
             rounded
+            color="grey-8"
+            label="hold"
+            class="col"
+            icon="stop"
+          />
+          <q-btn
+            dense
+            rounded
+            icon="skip_next"
             color="accent"
             label="proceed"
             class="col"
@@ -398,8 +371,7 @@ const proccedToOrderType = async () => {
   let OrderNumber = generateRandomNumber(1, 1000);
   if (
     orderStore.myOrder?.customer_name == null ||
-    (orderStore.myOrder.drinks.length < 1 &&
-      orderStore.myOrder.foods.length < 1)
+    orderStore.myOrder.orders.length < 1
   ) {
     timer = setTimeout(() => {
       $q.loading.show({
