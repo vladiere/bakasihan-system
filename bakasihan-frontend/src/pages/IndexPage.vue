@@ -53,6 +53,7 @@ watch(
   () => router.currentRoute.value,
   (newVal, _oldVal) => {
     console.log(newVal.query.search);
+    console.log(_oldVal)
   }
 );
 

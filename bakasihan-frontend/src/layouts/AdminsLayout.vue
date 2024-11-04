@@ -138,7 +138,9 @@ import AdminsLayoutListComponent, {
 import { useQuasar, QSpinnerGears } from 'quasar';
 import { useRouter } from 'vue-router';
 import { useNewOrderStore } from 'src/stores/NewOrdersStore';
+import { useDashboardStore } from '../stores/dashboardData';
 
+const dashboardStore = useDashboardStore();
 const $q = useQuasar();
 const newOrderStore = useNewOrderStore();
 const router = useRouter();
@@ -307,6 +309,7 @@ watchEffect(() => {
       newOrderStore.pagination.page,
       newOrderStore.pagination.rowsPerPage
     );
+    dashboardStore.fetchData()
   });
   socket.on('disconnect', () => {
     console.log('Disconnected from the server');

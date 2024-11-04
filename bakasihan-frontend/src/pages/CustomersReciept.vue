@@ -106,7 +106,7 @@
       label="download"
       icon="download"
       color="positive"
-      @click="downloadReciept"
+      @click="downloadRecieptData"
     />
     <q-btn label="goback" icon="undo" color="negative" @click="gobackToIndex" />
   </div>
@@ -124,8 +124,8 @@ import {
   userReciept,
   humanizeDate,
   formatToCurrency,
+  downloadReciept
 } from 'src/services/api.services';
-import html2canvas from 'html2canvas';
 import { useOrderStore } from 'src/stores/orderStore';
 import { useQuasar } from 'quasar';
 
@@ -148,32 +148,11 @@ const gobackToIndex = () => {
   window.location.reload();
 };
 
-const downloadReciept = async () => {
-  const reciept = document.querySelector(
-    '#customers-receipt'
-  ) as HTMLDataElement;
-  if (reciept) {
-    try {
-      const canvas = await html2canvas(reciept);
-      const imageData = canvas.toDataURL('image/png');
+const downloadRecieptData = ()=>{
+  const recieptData = document.querySelector('#customers-receipt') as HTMLDataElement;
+  downloadReciept(recieptData)
+}
 
-      //create an image element or download the image
-
-      const imgElement = document.createElement('img');
-      imgElement.src = imageData;
-      document.body.appendChild(imgElement);
-
-      const link = document.createElement('a');
-      link.href = imageData;
-      link.download = 'screenshot.png';
-      link.click();
-    } catch (error) {
-      console.error('Error capturing element:', error);
-    }
-  } else {
-    console.error('Element not found');
-  }
-};
 
 const handleGetReciept = async () => {
   const postData = {
@@ -214,7 +193,7 @@ watchEffect(() => {
         message: data,
       });
     }
-    handleGetReciept();
+    window.location.reload()
   });
   socket.on('disconnect', () => {
     console.log('Disconnected from the server');
@@ -226,14 +205,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.main-logo {
-  width: 30vw; /* Set width to 30% of the viewport width */
-  height: 30vw; /* Set height equal to width for a perfect square */
-  max-height: 30vh; /* Limit the height to 30% of the viewport height */
-  max-width: 30vh; /* Limit the width to 30% of the viewport height */
-  object-fit: cover; /* Ensure the image covers the entire area */
-}
-
 .receipt-name {
   margin-left: 4%;
 }
@@ -300,5 +271,59 @@ onMounted(() => {
 }
 .goback-btns {
   margin-bottom: 4%;
+}
+.total-cash{
+  margin-right: 7%;
+  text-align: center;
+}
+.total-change{
+  margin-right: 7%;
+  text-align: center;
+}
+.main-logo {
+  width: clamp(20vw, 30vw, 30vh); /* Adjusts based on viewport width */
+  height: clamp(20vw, 30vw, 30vh); /* Keeps height proportional */
+  object-fit: cover;
+}
+
+.receipt-name,
+.text-underline,
+.fst-col,
+.total-amount,
+.total-cash,
+.total-change,
+.underline {
+  font-size: clamp(0.8rem, 1.2vw + 0.5rem, 1.5rem);
+}
+
+.menu-table th,
+.menu-table td {
+  font-size: clamp(0.7rem, 1vw + 0.4rem, 1.25rem);
+}
+
+.menu-table th {
+  font-size: clamp(1rem, 1.5vw + 0.5rem, 1.5rem);
+}
+
+th,
+.menu-table th:nth-child(1),
+.menu-table td:nth-child(1),
+.menu-table th:nth-child(2),
+.menu-table td:nth-child(2),
+.menu-table th:nth-child(3),
+.menu-table td:nth-child(3),
+.menu-table th:nth-child(4),
+.menu-table td:nth-child(4) {
+  font-size: clamp(0.8rem, 1vw + 0.3rem, 1.25rem);
+}
+
+.goback-btns {
+  font-size: clamp(0.9rem, 1vw + 0.3rem, 1.1rem);
+}
+
+.reciept {
+  border: solid 2px #000;
+  margin: 4%;
+  padding: 2%;
 }
 </style>

@@ -11,3 +11,6 @@ export interface ItemsDataT {
 export interface amountDataT{
     total_amount:number
   }
+  export interface countDataT{
+    total_number:number
+  }
