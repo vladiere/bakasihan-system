@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.16.4",
+    "@types/chart.js": "^2.9.41",
     "apexcharts": "^3.49.1",
     "axios": "^1.2.1",
     "chart.js": "^4.4.6",

@@ -2,7 +2,7 @@ import executeQuery from '../utils/executeQuery.util';
 import { Request,Response } from "express";
 import { countTable,Category } from '../types/products.types';
 import { recieptTypes } from '../types/tables.types';
-import { ItemsDataT,amountDataT } from '../types/items.types';
+import { ItemsDataT,amountDataT, countDataT } from '../types/items.types';
 
 export const getProducts = async (req: Request, res: Response) => {
   console.log(req.query);
@@ -346,6 +346,8 @@ export const getAllDataDashBoardRequired = async (req: Request, res: Response) =
     // Query for this year's sales
     const getThisYearDataOrders = "SELECT SUM(total_amount) as total_amount FROM order_tbl WHERE status = 'paid' AND YEAR(ctime) = YEAR(CURDATE())";
 
+    const newOrdersQuery = "SELECT COUNT(*) as total_number FROM order_tbl WHERE status = 'unpaid' AND DATE(ctime) = CURDATE()"
+
     // Execute the queries
     const [TodayAmountOrders] = await executeQuery(getTodayDataOrders, []) as Array<amountDataT>;
     
@@ -354,6 +356,8 @@ export const getAllDataDashBoardRequired = async (req: Request, res: Response) =
     const [ThisMonthAmountOrders] = await executeQuery(getThisMonthDataOrders, []) as Array<amountDataT>;
 
     const [ThisYearAmountOrders] = await executeQuery(getThisYearDataOrders, []) as Array<amountDataT>;
+    const [newOrders] = await executeQuery(newOrdersQuery, []) as Array<countDataT>;
+
 
     // Calculate today's sales
     const TodaySales = TodayAmountOrders.total_amount
@@ -366,13 +370,15 @@ export const getAllDataDashBoardRequired = async (req: Request, res: Response) =
 
     // Calculate this year's sales
     const ThisYearSales = ThisYearAmountOrders.total_amount
+    const newOrderData = newOrders.total_number
 
     // Return the sales data
     return res.status(200).send({
       TodaySales,
       ThisWeekSales,
       ThisMonthSales,
-      ThisYearSales
+      ThisYearSales,
+      newOrderData
     });
   } catch (error) {
     return res.status(500).send({ message: "Server error.", error });

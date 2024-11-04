@@ -2,7 +2,7 @@
   <q-layout view="hHr lpR fFf" class="bg-grey-11">
     <q-header elevated class="bg-accent text-white">
       <q-toolbar>
-        <q-btn-dropdown
+        <!-- <q-btn-dropdown
           flat
           dense
           rounded
@@ -94,7 +94,7 @@
               </q-item-section>
             </q-item>
           </q-list>
-        </q-btn-dropdown>
+        </q-btn-dropdown> -->
 
         <q-toolbar-title>
           <q-avatar><img src="../assets/logo.png" alt="" /></q-avatar> Entoy's

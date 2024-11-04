@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const http = require('http').createServer(app)
 const io = require('socket.io')(http, {
     cors: true,
-    origins: ['http://localhost:8080'],
+    origins: [process.env.FRONTEND_ORIGIN],
 }); // Add this line
 const cors = require('cors');
 app.use(bodyParser.urlencoded({ extended: true }));

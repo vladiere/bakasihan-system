@@ -1,3 +1,4 @@
+import html2canvas from 'html2canvas';
 import { api } from 'src/boot/axios';
 const base_url = 'http://localhost:4000/getImage/';
 
@@ -70,4 +71,27 @@ export const humanizeDate = (dateString: string) => {
   return new Intl.DateTimeFormat('en-US', options).format(date);
 }
 
+export const downloadReciept = async ( reciept: HTMLDataElement) => {
+  if (reciept) {
+    try {
+      const canvas = await html2canvas(reciept);
+      const imageData = canvas.toDataURL('image/png');
+
+      //create an image element or download the image
+
+      const imgElement = document.createElement('img');
+      imgElement.src = imageData;
+      document.body.appendChild(imgElement);
+
+      const link = document.createElement('a');
+      link.href = imageData;
+      link.download = 'reciept.png';
+      link.click();
+    } catch (error) {
+      console.error('Error capturing element:', error);
+    }
+  } else {
+    console.error('Element not found');
+  }
+};
 
