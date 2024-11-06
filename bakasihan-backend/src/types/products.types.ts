@@ -18,6 +18,18 @@ export interface Product {
     products: Product[];
   }
 
+  export interface myOrderhistoryT{
+    id:number
+    order_no:string|null
+    orders:Array<productsOrderDataT | null>
+    table_no:number|null
+    customer_name:string|null
+    total_amount:number
+    customer_cash:number|null
+    customer_change:number|null
+    ctime:string|null
+  }
+  
   export interface myOrderT{
     order_no:string|null
     orders:Array<productsOrderDataT | null>

@@ -27,11 +27,14 @@
       <template v-slot:body-cell-actions="props">
         <q-td>
           <q-btn
-            color="green-7"
-            icon="visibility"
-            label="View"
-            @click="view(props.row)"
-          />
+          v-if="props.row.category_name.toLowerCase() != 'drinks'"
+          flat
+    icon="mdi-delete-outline"
+    class="q-mx-sm"
+    @click="handleDeleteCategory(props.row.id,props.row.category_name)"
+  >
+    <q-tooltip>Delete</q-tooltip>
+  </q-btn>
         </q-td>
       </template>
     </q-table>
@@ -79,6 +82,7 @@
 import { ref, onMounted, watch } from 'vue';
 import {
   adminGetAllItemsCategories,
+  deleteItemsCategory,
   insertItemCategory,
 } from 'src/services/api.services';
 import {
@@ -205,6 +209,31 @@ const handleInsertItemCategory = async () => {
       });
     });
 };
+
+const handleDeleteCategory = async(val_id:number,val_cat_name:string)=>{
+  await deleteItemsCategory({id:val_id,category_name:val_cat_name}).then(response =>{
+    onRequest(
+        search.value,
+        pagination.value.page,
+        pagination.value.rowsPerPage
+      );
+      $q.notify({
+        color: 'positive',
+        textColor: 'white',
+        position: 'top',
+        icon: 'check',
+        message: response.data.message,
+      });
+  }).catch(error =>{
+    $q.notify({
+        color: 'negative',
+        textColor: 'white',
+        icon: 'close',
+        message: error.response.data.message,
+      });
+  })
+}
+
 </script>
 
 <style scoped></style>

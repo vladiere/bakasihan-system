@@ -106,7 +106,7 @@
       @click="downloadRecieptData"
       v-if="reciept?.status === 'paid'"
     />
-    <q-btn label="goback" icon="undo" color="negative" @click="gobackToIndex" />
+    <q-btn label="Return" icon="undo" color="negative" @click="gobackToIndex" />
     <q-btn
       label="Pay"
       icon="money"
@@ -163,7 +163,8 @@ import {
   humanizeDate,
   formatToCurrency,
   checkOutOrder,
-  downloadReciept
+  downloadReciept,
+emptyTable
 } from 'src/services/api.services';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
@@ -223,7 +224,26 @@ const confirmPayment = async () => {
   }
 };
 
-const gobackToIndex = () => {
+const gobackToIndex = async() => {
+  if(reciept.value && reciept.value?.order_type === 'dine in' && reciept.value.status === "unpaid"){
+    await emptyTable({
+      order_no: route.params.order_no,
+    customer_name: route.params.customer_name
+    }).then(response =>{
+      $q.notify({
+          icon: 'check',
+          color: 'positive',
+          message: response.data.message,
+        });
+    }).catch(err => {
+      $q.notify({
+          icon: 'check',
+          color: 'positive',
+          message: err.response.data.message,
+        });
+      
+    })
+  }
   router.push('/admin/adminNewOrders');
 };
 const calculateAmountPaid = computed(() => {

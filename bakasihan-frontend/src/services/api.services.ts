@@ -7,18 +7,33 @@ export const getImage = (val: string | null) => `${base_url}${val}`;
 //auth
 export const login = (val:object) => api.post('/auth/login',val)
 export const logout = (val:object) => api.post('/auth/logout',val)
+export const getMyProfile = () => api.post('/auth/getMyProfile')
+export const UpdateProfile = (val:object) => api.post('/auth/UpdateProfile',val)
 
 //admin
 export const insertProduct = (val:FormData) => api.post('/admin/insertProduct',val)
+export const updateProducts = (val:FormData) => api.post('/admin/updateProducts',val)
 export const insertItems = (val:FormData) => api.post('/admin/insertItems',val)
+export const updateItems = (val:FormData) => api.post('/admin/updateItems',val)
 export const insertProductCategory = (val:object) => api.post('/admin/insertProductCategory',val)
 export const insertItemCategory = (val:object) => api.post('/admin/insertItemCategory',val)
 export const insertCustomerTables = (val:object) => api.post('/admin/insertCustomerTables',val)
 export const checkOutOrder = (val:object) => api.post('/admin/checkOutOrder',val)
+export const emptyTable = (val:object) => api.post('/admin/emptyTable',val)
+export const subtractQuantity = (val:object) => api.post('/admin/subtractQuantity',val)
+export const deleteItems = (val:object) => api.post('/admin/deleteItems',val)
+export const deleteProduct = (val:object) => api.post('/admin/deleteProduct',val)
+export const deleteProductCategory = (val:object) => api.post('/admin/deleteProductCategory',val)
+export const deleteTable = (val:object) => api.post('/admin/deleteTable',val)
+export const addQuantity = (val:object) => api.post('/admin/addQuantity',val)
+export const deleteItemsCategory = (val:object) => api.post('/admin/deleteItemsCategory',val)
 export const adminGetAllProductsCategories = (param:object) =>api.get('/admin/adminGetAllProductsCategories',param)
 export const adminGetAllItemsCategories = (param:object) =>api.get('/admin/adminGetAllItemsCategories',param)
+export const adminOrderHistoryData = (param:object) =>api.get('/admin/adminOrderHistoryData',param)
 export const adminGetAllItems = (param:object) =>api.get('/admin/adminGetAllItems',param)
+export const AdminList = (param:object) =>api.get('/admin/AdminList',param)
 export const adminGetAllProducts = (param:object) =>api.get('/admin/adminGetAllProducts',param)
+export const AdminAllCustomerTable = (param:object) =>api.get('/admin/AdminAllCustomerTable',param)
 export const adminNewOrdersUnpaid = (param:object) =>api.get('/admin/adminNewOrdersUnpaid',param)
 export const adminNewOrdersPaid = (param:object) =>api.get('/admin/adminNewOrdersPaid',param)
 export const adminCustomersTable = () =>api.get('/admin/adminCustomersTable')
@@ -65,6 +80,23 @@ export const humanizeDate = (dateString: string) => {
     day: 'numeric',
     hour: 'numeric',
     minute: 'numeric',
+  };
+
+  // Using Intl.DateTimeFormat to format the date in a human-readable way
+  return new Intl.DateTimeFormat('en-US', options).format(date);
+}
+export const humanizeDateMonthlyDate = (dateString: string) => {
+  const date = new Date(dateString);
+  console.log(date , dateString)
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    throw new Error('Invalid date string');
+  }
+
+  // Options for formatting the date
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
   };
 
   // Using Intl.DateTimeFormat to format the date in a human-readable way

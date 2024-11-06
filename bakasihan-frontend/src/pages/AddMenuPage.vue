@@ -162,7 +162,7 @@
           <q-input
             v-model="table_no"
             color="dark"
-            label="Price"
+            label="Table Number"
             class="col"
             type="number"
             :rules="[

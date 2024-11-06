@@ -139,3 +139,44 @@ export interface ItemsT{
   total_amount:number
   purchase_date:string
 }
+
+export interface myOrderhistoryT{
+  id:number
+  order_no:string|null
+  orders:Array<productsOrderDataT | null>
+  table_no:number|null
+  customer_name:string|null
+  total_amount:number
+  customer_cash:number|null
+  customer_change:number|null
+  ctime:string|null
+}
+export interface myOrderhistoryDataT{
+  actions:myOrderhistoryT
+  id:number
+  order_no:string|null
+  orders:Array<productsOrderDataT | null>
+  table_no:number|null
+  customer_name:string|null
+  total_amount:number
+  customer_cash:number|null
+  customer_change:number|null
+  ctime:string|null
+}
+export interface usersDataT {
+  actions:usersDataT
+  id:number
+  username:string
+  status:string
+  role:string
+  fullname:string
+  gender:string
+}
+export interface usersT {
+  id:number
+  username:string
+  status:string
+  first_name:string
+  last_name:string
+  gender:string
+}

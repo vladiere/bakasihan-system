@@ -9,6 +9,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const thisMonthSales = ref(0);
   const thisYearSales = ref(0);
   const newOrdersData = ref(0);
+  const monthlySales = ref<Array<{data_date:string,sales:string}>>([]);
+  const weeklySales = ref<Array<{data_date:string,sales:string}>>([]);
   const salesData = ref<Array<{ title: string; sales: string; icon: string; color: string; status: number; path: string; }>>([]);
   const loading = ref(false);
 
@@ -17,13 +19,15 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loading.value = true;
     try {
       const res = await adminGetAllDataDashBoardRequired();
-      const { TodaySales, ThisWeekSales, ThisMonthSales, ThisYearSales, newOrderData } = res.data;
+      const { TodaySales, ThisWeekSales, ThisMonthSales, ThisYearSales, newOrderData, monthlySales: fetchedMonthlySales,weeklySales:fetchedWeeklySales } = res.data;
 
       todaySales.value = TodaySales;
       thisWeekSales.value = ThisWeekSales;
       thisMonthSales.value = ThisMonthSales;
       thisYearSales.value = ThisYearSales;
       newOrdersData.value = newOrderData;
+      monthlySales.value = fetchedMonthlySales;
+      weeklySales.value = fetchedWeeklySales;
 
       // Update salesData
       salesData.value = [
@@ -84,6 +88,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     thisMonthSales,
     thisYearSales,
     newOrdersData,
+    monthlySales,
+    weeklySales,
     salesData,
     loading,
     fetchData,

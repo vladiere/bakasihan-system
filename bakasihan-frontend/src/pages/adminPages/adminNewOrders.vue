@@ -25,17 +25,20 @@
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
           <q-btn
-            icon="visibility"
-            label="View Orders"
-            color="positive"
-            @click="viewOrders(props.row.orders)"
-          />
-          <q-btn
-            icon="check"
-            label="Checkout Order"
-            color="primary"
-            @click="checkoutOrder(props.row.order_no, props.row.customer_name)"
-          />
+            flat
+    icon="visibility"
+    class="q-mx-xsm"
+    @click="viewOrders(props.row.orders)"
+  >
+    <q-tooltip>View Orders</q-tooltip>
+  </q-btn>
+            <q-btn
+            flat
+              icon="check"
+              @click="checkoutOrder(props.row.order_no, props.row.customer_name)"
+            >
+        <q-tooltip>Check Orders</q-tooltip>
+        </q-btn>
         </q-td>
       </template>
     </q-table>
