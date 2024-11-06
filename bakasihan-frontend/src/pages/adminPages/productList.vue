@@ -37,16 +37,108 @@
         </template>
         <template v-slot:body-cell-actions="props">
           <q-td>
+            
             <q-btn
-              color="green-7"
-              icon="visibility"
-              label="View"
-              @click="view(props.row)"
-            />
+  flat
+    icon="mdi-pencil-box-outline"
+    class="q-mx-xsm"
+    @click="openFoodDialog(props.row)"
+  >
+    <q-tooltip>Edit</q-tooltip>
+  </q-btn>
+            <q-btn
+            flat
+    icon="mdi-delete-outline"
+    class="q-mx-xsm"
+    @click="handleDeleteProduct(props.row.id)"
+  >
+    <q-tooltip>Delete</q-tooltip>
+  </q-btn>
           </q-td>
         </template>
       </q-table>
     </q-page>
+    <q-dialog v-model="foodDialog">
+    <q-card>
+      <q-card-section>Edit Food Menu</q-card-section>
+      <q-separator />
+      <q-card-section>
+        <q-form
+          class="col column q-gutter-y-md full-width"
+          @submit="handleSubmitProduct"
+        >
+        <img
+            :src="preview"
+            alt="preview"
+            height="50%"
+            width="50%"
+            v-if="preview"
+          />
+          <img
+            :src="getImage(Viewing)"
+            alt="default"
+            height="50%"
+            width="50%"
+            v-else
+          />
+          <input
+            type="file"
+            name=""
+            id=""
+            @change="handleImageChange"
+            accept="image/jpg,image/png,image/jpeg"
+          />
+          
+          <q-input
+            v-model="formdata.product_name"
+            color="dark"
+            label="Product Name"
+            class="col"
+          />
+          <q-input
+            v-model="formdata.product_description"
+            color="dark"
+            label="Product Description"
+            class="col"
+          />
+          <q-input
+            v-model="formdata.price"
+            color="dark"
+            label="Price"
+            class="col"
+            type="number"
+            :rules="[
+              (val) => (!!val && !isNaN(val)) || 'Please enter a valid number',
+            ]"
+          />
+          <q-select
+            v-model="selectedOption"
+            label="Select Status"
+            :options="option"
+            @update:model-value="handleSelect"
+          />
+        </q-form>
+      </q-card-section>
+      <q-separator />
+      <q-card-section>
+        <q-btn
+          label="close"
+          color="negative"
+          icon="close"
+          :disable="loading"
+          :loading="loading"
+          @click="closeFoodDialog"
+        /><q-btn
+          label="Submit"
+          icon="check"
+          color="positive"
+          :disable="loading"
+          :loading="loading"
+          @click="handleSubmitProduct"
+        />
+      </q-card-section>
+    </q-card>
+  </q-dialog>
   </div>
 </template>
 
@@ -54,18 +146,86 @@
 import {
   productsDataT,
   TableRequestProps,
-  productT,
 } from 'src/components/models';
 import {
   adminGetAllProducts,
+  deleteProduct,
   formatToCurrency,
   getImage,
+updateProducts,
 } from 'src/services/api.services';
 import { ref, onMounted, watch } from 'vue';
+import {useQuasar} from 'quasar'
 
+
+const $q = useQuasar();
 const loading = ref<boolean>(false);
+const foodDialog = ref(false)
 const search = ref<string>('');
+const preview = ref('')
+const Viewing = ref<string|null>('')
 const rows = ref<Array<productsDataT>>([]);
+  type formdataT = {
+  product_image: File | null;
+  category_name: string;
+  category_id: number | null;
+  product_name: string | null;
+  product_description: string | null;
+  price: number | null;
+};
+type optionT = {
+  label: string;
+  value: number;
+};
+const option = ref<Array<optionT>>([]);
+const selectedOption = ref<optionT | null>(null);
+
+const handleSelect = (optionData: optionT) => {
+  selectedOption.value =
+    option.value.find((opt) => opt.value === optionData.value) || null;
+};
+
+const foodstatus = ref<Array<{ status: number; status_name: string }>>([
+  { status: 1, status_name: 'Active' },
+  { status: 2, status_name: 'In Active' },
+]);
+const ID = ref<number | null>(0)
+
+const openFoodDialog = (val: productsDataT | null) => {
+  console.log(val);
+  ID.value = val?.id || null
+  Viewing.value = val?.product_image || null
+  formdata.value.product_name = val?.product_name || null
+  formdata.value.product_description = val?.product_description || null
+  formdata.value.price = val?.price || null
+  foodDialog.value = true;
+  option.value = []; // Clear previous options to avoid duplicates
+
+  // Populate options based on foodstatus
+  foodstatus.value.forEach((element) => {
+    option.value.push({ label: element.status_name, value: element.status });
+  });
+
+  // Set selectedOption to the option that matches val.status
+  if (val && val.status != null) {
+    selectedOption.value = option.value.find((optData) => optData.value === val.status) || null;
+    console.log(selectedOption.value)
+  } else {
+    // Fallback to the first option if no status provided
+    selectedOption.value = option.value[0] || null;
+    console.log(selectedOption.value)
+  }
+};
+
+
+const formdata = ref<formdataT>({
+  product_image: null,
+  category_name: '',
+  category_id: null,
+  product_name: '',
+  product_description: '',
+  price: 0,
+});
 interface Column {
   name: string;
   label: string;
@@ -73,7 +233,6 @@ interface Column {
   field: string | ((row: productsDataT) => productsDataT);
   sortable?: boolean;
 }
-const viewData = ref<productT | null>(null);
 const pagination = ref({
   page: 1,
   rowsPerPage: 5,
@@ -132,6 +291,46 @@ const columns: Column[] = [
   },
 ];
 
+
+const handleSubmitProduct = async()=>{
+  let data = new FormData()
+  data.append('id',`${ID.value}`)
+  if(formdata.value.product_image){
+    data.append('product_image',formdata.value.product_image)
+  }
+  data.append('picture',`${Viewing.value}`)
+  data.append('product_name',`${formdata.value.product_name}`)
+  data.append('product_description',`${formdata.value.product_description}`)
+  data.append('price',`${formdata.value.price}`)
+  data.append('status',`${selectedOption.value?.value}`)
+  loading.value = true
+  await updateProducts(data).then(response =>{
+    onRequest(
+        search.value,
+        pagination.value.page,
+        pagination.value.rowsPerPage
+      );
+      $q.notify({
+        color: 'positive',
+        textColor: 'white',
+        position: 'top',
+        icon: 'check',
+        message: response.data.message,
+      });
+  }).catch(error =>{
+    $q.notify({
+        color: 'negative',
+        textColor: 'white',
+        icon: 'close',
+        message: error.response.data.message,
+      });
+  }).finally(()=>{
+loading.value = false
+  })
+}
+const closeFoodDialog = ()=>{
+  foodDialog.value = false
+}
 const onRequest = async (search = '', page = 0, perpage = 5) => {
   loading.value = true;
   await adminGetAllProducts({
@@ -169,9 +368,40 @@ watch(search, () => {
 onMounted(() => {
   onRequest(search.value, pagination.value.page, pagination.value.rowsPerPage);
 });
-const view = (data: productT) => {
-  viewData.value = { ...data };
+const handleImageChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement | null;
+  if (target && target.files && target.files.length > 0) {
+    // Check if the selected file is an image
+    const file = target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      preview.value = URL.createObjectURL(file);
+      formdata.value.product_image = file;
+    }
+  }
 };
+const handleDeleteProduct = async(val_id:number)=>{
+  await deleteProduct({id:val_id}).then(response =>{
+    onRequest(
+        search.value,
+        pagination.value.page,
+        pagination.value.rowsPerPage
+      );
+      $q.notify({
+        color: 'positive',
+        textColor: 'white',
+        position: 'top',
+        icon: 'check',
+        message: response.data.message,
+      });
+  }).catch(error =>{
+    $q.notify({
+        color: 'negative',
+        textColor: 'white',
+        icon: 'close',
+        message: error.response.data.message,
+      });
+  })
+}
 </script>
 
 <style scoped></style>

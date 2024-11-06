@@ -14,3 +14,16 @@ export interface amountDataT{
   export interface countDataT{
     total_number:number
   }
+
+export interface salesDataT{
+    data_date:string
+    sales:number
+}
+export interface usersDataT {
+  id:number
+  username:string
+  status:string
+  role:string
+  fullname:string
+  gender:string
+}

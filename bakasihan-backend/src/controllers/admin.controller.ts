@@ -6,13 +6,67 @@ import { getAllProductsCategories,
      getAdminAllNewOrdersPaid,
      getAllItemsCategories,
      getAllItems,
-     getAllDataDashBoardRequired
+     getAllDataDashBoardRequired,
+     getOrderHistoryData,
+     getAdminCustomerTable,
+     getAdminList
     } from '../service/recycledFunc.service';
 import { Request,Response } from "express";
 import { ItemsDataT } from '@/types/items.types';
 
 type categories = {
     category_name:string
+}
+export const deleteProductCategory = async(req:Request,res:Response)=>{
+    try {
+        const {id} = req.body
+        const deleteQuery = "DELETE FROM product_categories_tbl WHERE id = ?"
+        const deleteProductQuery = "DELETE FROM products_tbl WHERE category_id = ?"
+        await executeQuery(deleteQuery,[id]).then(async()=>{
+            const result = await executeQuery(deleteProductQuery,[id])
+            if(result){
+        return res.status(200).send({ message: "Successfully deleted." });
+            }
+        })
+    } catch (error) {
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
+export const deleteProduct =async (req:Request,res:Response ) => {
+    try {
+        const {id} = req.body
+        const deleteQuery = "DELETE FROM products_tbl WHERE id = ?"
+        const result = await executeQuery(deleteQuery,[id])
+        if(result){
+        return res.status(200).send({ message: "Successfully deleted." });
+        } 
+    } catch (error) {
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
+
+export const updateProducts = async(req: Request, res: Response) =>{
+    try {
+        const product_image = req.file as Express.Multer.File | undefined;
+        const {id,picture,product_name,product_description,price,status} = req.body;
+        console.log(req.body)
+        const updateQuery = "UPDATE products_tbl SET product_image = ?, product_name = ?, product_description = ?,price = ?, status = ? WHERE id = ?"
+        let pictureData
+        if (!product_image){
+            pictureData = picture
+        }else{
+            pictureData = `images/${product_image.filename}`
+        }
+        const result = await executeQuery(updateQuery,[pictureData,product_name,product_description,price,status,id])
+        if(result){
+            return res.status(200).send({message:"Successfully Updated"})
+        }
+    } catch (error) {
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
 }
 export const insertProduct = async (req: Request, res: Response) => {
     const checkProductQueryDrinks = "SELECT category_name FROM product_categories_tbl WHERE id = ?";
@@ -42,7 +96,7 @@ export const insertProduct = async (req: Request, res: Response) => {
             }
         }
 
-        const imagePath = `images/${product_image.originalname}`;
+        const imagePath = `images/${product_image.filename}`;
         const insertQuery = 'INSERT INTO products_tbl (category_id, product_image, product_name, product_description, price) VALUES (?, ?, ?, ?, ?)';
         const result = await executeQuery(insertQuery, [category_id, imagePath, product_name, product_description, price]);
 
@@ -56,7 +110,27 @@ export const insertProduct = async (req: Request, res: Response) => {
         return res.status(500).send({ message: "Something went wrong with the database." });
     }
 }
-
+export const deleteItemsCategory = async(req:Request,res:Response)=>{
+    try {
+        const {id,category_name} = req.body
+        const deleteQuery = "DELETE FROM items_category_tbl WHERE id = ?"
+        const deleteItemQuery = "DELETE FROM items_tbl WHERE item_category_id = ?"
+        if(category_name.toLowerCase() === 'drinks'){
+            return res.status(409).send({message:"This Category is not deletable"})
+        }else{
+            await executeQuery(deleteQuery,[id]).then(async()=>{
+                const result = await executeQuery(deleteItemQuery,[id])
+                if(result){
+                    return res.status(200).send({message:"Successfully Deleted"})
+                }
+            })
+           
+        }
+    } catch (error) {
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
 export const insertCustomerTables = async(req:Request,res:Response)=>{
     try {
         const {table_no} = req.body
@@ -125,6 +199,46 @@ export const adminNewOrdersUnpaid = async (req:Request,res:Response) => {
 export const adminNewOrdersPaid = async (req:Request,res:Response) => {
     return await getAdminAllNewOrdersPaid(req,res)
 }
+export const adminOrderHistoryData = async (req:Request,res:Response) => {
+    return await getOrderHistoryData(req,res)
+}
+export const AdminAllCustomerTable = async (req:Request,res:Response) => {
+    return await getAdminCustomerTable(req,res)
+}
+export const AdminList = async (req:Request,res:Response) => {
+    return await getAdminList(req,res)
+}
+export const deleteTable = async(req:Request,res:Response)=>{
+    try {
+        const {id} = req.body
+        const deleteQuery = "DELETE FROM customer_table_tbl WHERE id = ?"
+        const result = await executeQuery(deleteQuery,[id])
+        if(result){
+            return res.status(200).send({message:"Successfully Deleted"})
+        }
+    } catch (error) {
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
+export const emptyTable = async(req:Request,res:Response)=>{
+    const {order_no,customer_name} = req.body
+    try{
+        const checkQuery = 'SELECT * FROM order_tbl WHERE order_no = ? AND customer_name = ?'
+        const updateQuery = "UPDATE customer_table_tbl SET order_no = '', status = 1 WHERE table_no = ?"  
+        const [checkData] = await executeQuery(checkQuery,[order_no,customer_name]) as Array<any>
+
+        if(checkData.order_type === 'dine in'){
+            const result = await executeQuery(updateQuery,[checkData.table_no])
+            if(result){
+                return res.status(200).send({message:"Successfully Updated"})
+            }
+        }
+    }catch(error){
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
 export const checkOutOrder = async (req:Request,res:Response) => {
     const {order_no,customer_name,cash,total_amount} = req.body
     try {
@@ -157,7 +271,7 @@ export const insertItems = async(req:Request, res:Response)=>{
           }
           //total amount = price multiplied by quantity
           const total_amount = Math.ceil(price * quantity)
-          const imagePath = `images/${item_picture.originalname}`;
+          const imagePath = `images/${item_picture.filename}`;
 
         const insertQuery = 'INSERT INTO items_tbl(item_category_id,item_picture,item_name,quantity,remaining_quantity,price,total_amount,purchase_date)VALUES(?,?,?,?,?,?,?,now())'
         const result = await executeQuery(insertQuery,[item_category_id,imagePath,item_name,quantity,quantity,price,total_amount]);
@@ -170,6 +284,65 @@ export const insertItems = async(req:Request, res:Response)=>{
         return res.status(500).send({ message: "Something went wrong with the database." });
     }
 }
+export const deleteItems = async(req:Request, res:Response) =>{
+    try {
+        const {id,category_name} = req.body
+        const deleteQuery = "DELETE FROM items_tbl WHERE id = ?"
+        const updateQuery = "UPDATE items_tbl SET quantity = 0, remaining_quantity = 0, price = 0,total_amount = 0 WHERE id = ?"
+        if(category_name.toLowerCase() === 'drinks'){
+            const secondRes = await executeQuery(updateQuery,[id])
+            if(secondRes){
+                return res.status(200).send({message:"Successfully Reseted"})
+            }
+        }else{
+            const result = await executeQuery(deleteQuery,[id])
+            if(result){
+                return res.status(200).send({message:"Successfully Deleted"})
+            }
+        }
+    } catch (error) {
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
+export const updateItems = async(req:Request, res:Response)=>{
+    try {
+        const item_picture = req.file as Express.Multer.File | undefined;
+        const {id,picture,item_name,quantity,price} = req.body;
+        console.log(req.body)
+        const selectQuery = "SELECT * FROM items_tbl WHERE id = ?"
+        const updateQuery = "UPDATE items_tbl SET item_picture = ?, item_name = ?, quantity = ?, remaining_quantity = ?,price = ?, total_amount = ? WHERE id = ?"
+        const [checkData] = await executeQuery(selectQuery,[id]) as Array<any>
+        let remainders
+        let total_amount
+        let dataRemain
+        console.log(checkData)
+        if(checkData.quantity > quantity){
+            remainders = Math.ceil(checkData.quantity - quantity)
+            dataRemain = Math.ceil(checkData.remaining_quantity - remainders)
+            if (dataRemain < 0){
+                return res.status(409).send({message:"remaining Quantity should not less than 0"})
+            }
+        }else{
+            remainders = Math.ceil(quantity - checkData.quantity)
+            dataRemain = Math.ceil(checkData.remaining_quantity + remainders)
+        }
+        let pictureData
+        if (!item_picture){
+            pictureData = picture
+        }else{
+            pictureData = `images/${item_picture.filename}`
+        }
+        total_amount = quantity * price
+        const result = await executeQuery(updateQuery,[pictureData,item_name,quantity,dataRemain,price,total_amount,id])
+        if(result){
+            return res.status(200).send({message:"Successfully Updated"})
+        }
+    } catch (error) {
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
 export const getAdminItemDistictCategory = async(req:Request,res:Response)=>{
     try {
         const selectQuery = "SELECT DISTINCT id,category_name FROM items_category_tbl"
@@ -177,6 +350,60 @@ export const getAdminItemDistictCategory = async(req:Request,res:Response)=>{
         return res.status(200).send({
             categories:result
         })
+    } catch (error) {
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
+export const subtractQuantity =async (req:Request,res:Response) => {
+    try {
+        const {id} = req.body
+        const selectQuery = "SELECT * FROM items_tbl WHERE id = ?"
+        const updateQuery = "UPDATE items_tbl SET quantity = ?, remaining_quantity = ?, total_amount = ? WHERE id = ?"
+        const [item] = await executeQuery(selectQuery,[id]) as Array<any>
+
+        if(item && item.quantity){
+            let subtractedQuantity = item.quantity
+            let subtractedRemainingQuantity = item.remaining_quantity
+
+            if (item.remaining_quantity !== 0 ){
+                subtractedRemainingQuantity--
+                subtractedQuantity--
+            }else{
+                return res.status(409).send({message:"remaining Quantity cannot be Subtracted"})
+            }
+            const total_amount = Math.ceil(item.price * subtractedQuantity)
+
+          const result = await executeQuery(updateQuery,[subtractedQuantity,subtractedRemainingQuantity,total_amount,id])
+          if(result){
+            return res.status(200).send({message:"Quantity Subtracted Successfully"})
+          }
+        }
+    } catch (error) {
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
+export const addQuantity =async (req:Request,res:Response) => {
+    try {
+        const {id} = req.body
+        const selectQuery = "SELECT * FROM items_tbl WHERE id = ?"
+        const updateQuery = "UPDATE items_tbl SET quantity = ?, remaining_quantity = ?, total_amount = ? WHERE id = ?"
+        const [item] = await executeQuery(selectQuery,[id]) as Array<any>
+
+        if(item && item.quantity){
+            let addedQuantity = item.quantity
+            let addedRemainingQuantity = item.remaining_quantity
+
+                addedRemainingQuantity++
+                addedQuantity++
+            const total_amount = Math.ceil(item.price * addedQuantity)
+
+          const result = await executeQuery(updateQuery,[addedQuantity,addedRemainingQuantity,total_amount,id])
+          if(result){
+            return res.status(200).send({message:"Quantity added Successfully"})
+          }
+        }
     } catch (error) {
         console.error(error); // Log detailed error for debugging
         return res.status(500).send({ message: "Something went wrong with the database." });

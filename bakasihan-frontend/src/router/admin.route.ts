@@ -12,6 +12,9 @@ const adminsRoute = [
       { path: 'tableList', name: 'table_list', component: () => import('pages/adminPages/adminTables.vue') },
       { path: 'items-category', name: 'items_category', component: () => import('pages/adminPages/adminItemCategory.vue') },
       { path: 'items-list', name: 'items_list', component: () => import('pages/adminPages/adminItemsList.vue') },
+      { path: 'order-history', name: 'order_history', component: () => import('pages/adminPages/adminOrderHistory.vue') },
+      { path: 'admin-list', name: 'admin_list', component: () => import('pages/adminPages/adminList.vue') },
+      { path: 'admin-settings', name: 'admin_settings', component: () => import('pages/adminPages/adminSettings.vue') },
     ],
   },
 ];

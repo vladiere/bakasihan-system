@@ -4,7 +4,7 @@
   "main": "app.js",
   "scripts": {
   "dev": "ts-node-dev --poll src/app.ts", 
-  "dev:watch": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/app.ts",
+  "dev:watch": "nodemon src/app.ts",
   "start": "npm run build && node build/app.js",
   "activate": "--watch ts-node-dev --poll src/app.ts",
   "build": "rimraf ./build && tsc",

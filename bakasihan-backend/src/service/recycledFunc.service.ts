@@ -1,8 +1,8 @@
 import executeQuery from '../utils/executeQuery.util';
 import { Request,Response } from "express";
-import { countTable,Category } from '../types/products.types';
+import { countTable,Category, myOrderT, myOrderhistoryT } from '../types/products.types';
 import { recieptTypes } from '../types/tables.types';
-import { ItemsDataT,amountDataT, countDataT } from '../types/items.types';
+import { ItemsDataT,amountDataT, countDataT, salesDataT, usersDataT } from '../types/items.types';
 
 export const getProducts = async (req: Request, res: Response) => {
   console.log(req.query);
@@ -154,7 +154,7 @@ export const getAllAdminProducts = async(req: Request, res: Response) => {
   
       // Query to get paginated results with search
       const getQuery = `
-        SELECT product.id, category.category_name, product.product_image, product.product_name, product.product_description, product.price 
+        SELECT product.id, category.category_name, product.product_image, product.product_name, product.product_description, product.price, product.status
         FROM products_tbl as product 
         LEFT OUTER JOIN product_categories_tbl as category 
         ON category.id = product.category_id 
@@ -172,6 +172,50 @@ export const getAllAdminProducts = async(req: Request, res: Response) => {
       // Send the paginated results along with total records
       return res.status(200).send({
         products: result,
+        current_page: page,
+        per_page: limit,
+        total: total, // total number of matching records
+      });
+    } catch (error) {
+      return res.status(500).send({ message: "Server error.", error });
+    }
+  }
+  export const getAdminCustomerTable = async(req:Request,res:Response)=>{
+    try {
+      const page = parseInt(req.query.page as string) || 1; // default to page 1
+      const limit = parseInt(req.query.per_page as string) || 5; // default limit to 5
+      const searchTerm = req.query.search ? `%${req.query.search}%` : '%%'; // if no searchTerm, match all
+      const offset = (page - 1) * limit;
+  
+      // Correct the search pattern to avoid double wildcards
+      const searchPattern = searchTerm;
+
+      const totalQuery = `
+      SELECT id,table_no,order_no,status FROM customer_table_tbl
+      WHERE table_no LIKE ? 
+        OR order_no LIKE ? 
+        OR status LIKE ? `;
+
+    const totalResult = await executeQuery(totalQuery, [searchPattern, searchPattern, searchPattern]) as Array<countTable>;
+
+    const total = totalResult[0].total; // Get total from the result
+
+    // Query to get paginated results with search
+    const getQuery = `
+      SELECT id,table_no,order_no,status FROM customer_table_tbl
+      WHERE table_no LIKE ? 
+        OR order_no LIKE ? 
+        OR status LIKE ? 
+      LIMIT ? OFFSET ?`;
+
+    const result = await executeQuery(getQuery, [searchPattern, searchPattern, searchPattern, limit, offset]);
+
+    if (!result) {
+      return res.status(402).send({ message: "Error fetching." });
+    }
+
+      return res.status(200).send({
+        tables: result,
         current_page: page,
         per_page: limit,
         total: total, // total number of matching records
@@ -298,6 +342,40 @@ export const getAllAdminProducts = async(req: Request, res: Response) => {
         return res.status(500).send({ message: "Server error.", error });
     }
 };
+export const getAdminList = async(req: Request, res: Response) => {
+  try {
+    // Get pagination parameters from request query
+    const page = parseInt(req.query.page as string) || 1; // default to page 1
+    const limit = parseInt(req.query.per_page as string) || 5; // default limit to 10
+    const searchTerm = req.query.searchTerm ? `%${req.query.searchTerm}%` : '%%'; // if no searchTerm, match all
+
+    const offset = (page - 1) * limit;
+
+    // Query to get the total number of records (without pagination)
+    const totalQuery = 'SELECT COUNT(*) as total FROM user_tbl a LEFT OUTER JOIN userinfo_tbl b ON b.user_id = a.id WHERE a.username LIKE ? OR a.status LIKE ? OR a.role LIKE ?';
+    const totalResult = await executeQuery(totalQuery, [searchTerm,searchTerm,searchTerm]) as Array<countTable>;
+
+    const total = totalResult[0].total; // Get total from the result
+
+    // Query to get paginated results with search
+    const getQuery = `SELECT a.id,a.username,a.status,a.role, CONCAT_WS(' ', b.first_name,b.last_name) as fullname, b.gender FROM user_tbl a LEFT OUTER JOIN userinfo_tbl b ON b.user_id = a.id WHERE a.username LIKE ? OR a.status LIKE ? OR a.role LIKE ? LIMIT ? OFFSET ?`;
+    const result = await executeQuery(getQuery, [searchTerm,searchTerm,searchTerm, limit, offset]) as Array<usersDataT>;
+
+    if (!result) {
+        return res.status(402).send({ message: "Error fetching." });
+    }
+
+    // Send the paginated results along with total records
+    return res.status(200).send({
+        lists: result,
+        current_page:page,
+        per_page:limit,
+        total:total, // total number of matching records
+    });
+} catch (error) {
+    return res.status(500).send({ message: "Server error.", error });
+}
+}
 export const getAllItems = async (req: Request, res: Response) => {
   try {
       // Get pagination parameters from request query
@@ -348,6 +426,31 @@ export const getAllDataDashBoardRequired = async (req: Request, res: Response) =
 
     const newOrdersQuery = "SELECT COUNT(*) as total_number FROM order_tbl WHERE status = 'unpaid' AND DATE(ctime) = CURDATE()"
 
+    const salesPermonthQuery = `SELECT DATE_FORMAT(ctime, '%Y-%m') AS data_date, 
+    SUM(total_amount) AS sales 
+FROM order_tbl 
+WHERE YEAR(ctime) = YEAR(CURDATE()) 
+   AND status = 'paid' 
+GROUP BY data_date`
+
+
+const salesperWeekQuery = `
+SELECT 
+    WEEK(ctime, 1) - WEEK(DATE_SUB(ctime, INTERVAL DAYOFMONTH(ctime) - 1 DAY), 1) + 1 AS data_date,
+    SUM(total_amount) AS sales
+FROM 
+    order_tbl
+WHERE 
+    MONTH(ctime) = MONTH(CURRENT_DATE) AND
+    YEAR(ctime) = YEAR(CURRENT_DATE) AND 
+    status = 'paid' 
+GROUP BY 
+    data_date
+ORDER BY 
+    data_date;
+`
+
+
     // Execute the queries
     const [TodayAmountOrders] = await executeQuery(getTodayDataOrders, []) as Array<amountDataT>;
     
@@ -357,6 +460,9 @@ export const getAllDataDashBoardRequired = async (req: Request, res: Response) =
 
     const [ThisYearAmountOrders] = await executeQuery(getThisYearDataOrders, []) as Array<amountDataT>;
     const [newOrders] = await executeQuery(newOrdersQuery, []) as Array<countDataT>;
+    const monthlySales = await executeQuery(salesPermonthQuery,[]) as Array<salesDataT>
+    const weeklySales = await executeQuery(salesperWeekQuery,[]) as Array<salesDataT>
+
 
 
     // Calculate today's sales
@@ -378,9 +484,48 @@ export const getAllDataDashBoardRequired = async (req: Request, res: Response) =
       ThisWeekSales,
       ThisMonthSales,
       ThisYearSales,
-      newOrderData
+      newOrderData,
+      monthlySales,
+      weeklySales
     });
   } catch (error) {
     return res.status(500).send({ message: "Server error.", error });
   }
 };
+
+export const getOrderHistoryData = async (req:Request,res:Response) => {
+  try{
+  const page = parseInt(req.query.page as string) || 1; // default to page 1
+  const limit = parseInt(req.query.per_page as string) || 5; // default limit to 10
+  const searchTerm = req.query.searchTerm ? `%${req.query.searchTerm}%` : '%%'; // if no searchTerm, match all
+  const status = req.query.status
+  const order_type = req.query.order_type
+
+  const offset = (page - 1) * limit;
+  console.log(order_type)
+
+  // Query to get the total number of records (without pagination)
+  const totalQuery = 'SELECT COUNT(*) as total FROM order_tbl WHERE (order_no LIKE ? OR customer_name LIKE ?) AND order_type = ? AND status = ?';
+  const totalResult = await executeQuery(totalQuery, [searchTerm,searchTerm,order_type,status]) as Array<countTable>;
+
+  const total = totalResult[0].total; // Get total from the result
+
+  // Query to get paginated results with search
+  const getQuery = 'SELECT id,order_no,orders,table_no,order_type,customer_name,total_amount,customer_cash,customer_change,ctime FROM order_tbl WHERE (order_no LIKE ? OR customer_name LIKE ?) AND order_type = ? AND status = ? ORDER BY ctime DESC LIMIT ? OFFSET ?';
+  const result = await executeQuery(getQuery, [searchTerm,searchTerm,order_type,status, limit, offset]) as Array<myOrderhistoryT>;
+
+  if (!result) {
+      return res.status(402).send({ message: "Error fetching." });
+  }
+
+  // Send the paginated results along with total records
+  return res.status(200).send({
+      items: result,
+      current_page:page,
+      per_page:limit,
+      total:total, // total number of matching records
+  });
+} catch (error) {
+  return res.status(500).send({ message: "Server error.", error });
+}
+}

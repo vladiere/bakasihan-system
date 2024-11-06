@@ -60,21 +60,6 @@
         <q-expansion-item expand-separator>
           <template v-slot:header>
             <q-item-section avatar>
-              <q-icon color="accent" name="mdi-table-account" />
-            </q-item-section>
-            <q-item-section>Cashiers</q-item-section>
-          </template>
-          <q-list bordered separator>
-            <AdminsLayoutListComponent
-              v-for="(item, index) in casheirs_props"
-              :key="index"
-              v-bind="item"
-            />
-          </q-list>
-        </q-expansion-item>
-        <q-expansion-item expand-separator>
-          <template v-slot:header>
-            <q-item-section avatar>
               <q-icon color="accent" name="mdi-food" />
             </q-item-section>
             <q-item-section>Food Menu </q-item-section>
@@ -90,13 +75,13 @@
         <q-expansion-item expand-separator>
           <template v-slot:header>
             <q-item-section avatar>
-              <q-icon color="accent" name="mdi-chart-bar" />
+              <q-icon color="accent" name="mdi-package" />
             </q-item-section>
-            <q-item-section>Sales</q-item-section>
+            <q-item-section>Inventory</q-item-section>
           </template>
           <q-list bordered separator>
             <AdminsLayoutListComponent
-              v-for="(item, index) in sales_props"
+              v-for="(item, index) in inventory_props"
               :key="index"
               v-bind="item"
             />
@@ -105,13 +90,13 @@
         <q-expansion-item expand-separator>
           <template v-slot:header>
             <q-item-section avatar>
-              <q-icon color="accent" name="mdi-package" />
+              <q-icon color="accent" name="mdi-human" />
             </q-item-section>
-            <q-item-section>Inventory</q-item-section>
+            <q-item-section>Admins</q-item-section>
           </template>
           <q-list bordered separator>
             <AdminsLayoutListComponent
-              v-for="(item, index) in inventory_props"
+              v-for="(item, index) in admin_props"
               :key="index"
               v-bind="item"
             />
@@ -155,7 +140,7 @@ const toggleLeftDrawer = () => {
 };
 
 const onItemClick = () => {
-  console.log('Clicked');
+  router.push({name:'admin_settings'})
 };
 
 const handleLogout = async () => {
@@ -196,25 +181,7 @@ const orders_props = ref<AdminsLayoutListInterface[]>([
   {
     title: 'Order History',
     icon_name: 'mdi-history',
-    path_name: 'tables',
-  },
-]);
-
-const casheirs_props = ref<AdminsLayoutListInterface[]>([
-  {
-    title: 'Cashiers',
-    icon_name: 'mdi-account-supervisor',
-    path_name: 'view',
-  },
-  {
-    title: 'Add new',
-    icon_name: 'mdi-account-multiple-plus',
-    path_name: 'add',
-  },
-  {
-    title: 'Tables',
-    icon_name: 'mdi-table-column-width',
-    path_name: 'tables',
+    path_name: 'order_history',
   },
 ]);
 
@@ -241,24 +208,6 @@ const menus_props = ref<AdminsLayoutListInterface[]>([
   },
 ]);
 
-const sales_props = ref<AdminsLayoutListInterface[]>([
-  {
-    title: 'Total Sales',
-    icon_name: 'mdi-printer-pos-plus',
-    path_name: 'view',
-  },
-  {
-    title: 'Trends',
-    icon_name: 'mdi-trending-up',
-    path_name: 'trend',
-  },
-  {
-    title: 'Tables',
-    icon_name: 'mdi-table-column-width',
-    path_name: 'tables',
-  },
-]);
-
 const inventory_props = ref<AdminsLayoutListInterface[]>([
   {
     title: 'Items List',
@@ -269,6 +218,13 @@ const inventory_props = ref<AdminsLayoutListInterface[]>([
     title: 'Category',
     icon_name: 'mdi-invoice-list-outline',
     path_name: 'items_category',
+  },
+]);
+const admin_props = ref<AdminsLayoutListInterface[]>([
+  {
+    title: 'Admin List',
+    icon_name: 'mdi-list-box',
+    path_name: 'admin_list',
   },
 ]);
 onMounted(() => {

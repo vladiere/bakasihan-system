@@ -20,11 +20,13 @@
       <template v-slot:body-cell-actions="props">
         <q-td>
           <q-btn
-            color="green-7"
-            icon="visibility"
-            label="View"
-            @click="view(props.row)"
-          />
+          flat
+    icon="mdi-delete-outline"
+    class="q-mx-xsm"
+    @click="handleDeleteCategory(props.row.id)"
+  >
+    <q-tooltip>Delete</q-tooltip>
+  </q-btn>
         </q-td>
       </template>
     </q-table>
@@ -33,16 +35,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import { adminGetAllProductsCategories } from 'src/services/api.services';
+import { adminGetAllProductsCategories, deleteProductCategory } from 'src/services/api.services';
 import {
   TableRequestProps,
   categoryDataT,
-  categoryT,
 } from 'src/components/models';
+import {useQuasar} from 'quasar'
 
+const $q = useQuasar();
 const search = ref<string>('');
 const loading = ref(false);
-const viewData = ref<categoryT | null>(null);
 const rows = ref<Array<categoryDataT>>([]);
 interface Column {
   name: string;
@@ -119,10 +121,32 @@ onMounted(() => {
   onRequest(search.value, pagination.value.page, pagination.value.rowsPerPage);
 });
 
-const view = (data: categoryT) => {
-  console.log(data);
-  viewData.value = { ...data };
-};
+const handleDeleteCategory = async(val_id:number)=>{
+  loading.value = true
+  await deleteProductCategory({id:val_id}).then(response =>{
+    onRequest(
+        search.value,
+        pagination.value.page,
+        pagination.value.rowsPerPage
+      );
+      $q.notify({
+        color: 'positive',
+        textColor: 'white',
+        position: 'top',
+        icon: 'check',
+        message: response.data.message,
+      });
+  }).catch(error =>{
+    $q.notify({
+        color: 'negative',
+        textColor: 'white',
+        icon: 'close',
+        message: error.response.data.message,
+      });
+  }).finally(()=>{
+loading.value = false
+  })
+}
 </script>
 
 <style scoped></style>
