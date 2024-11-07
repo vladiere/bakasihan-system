@@ -9,6 +9,7 @@ export const login = (val:object) => api.post('/auth/login',val)
 export const logout = (val:object) => api.post('/auth/logout',val)
 export const getMyProfile = () => api.post('/auth/getMyProfile')
 export const UpdateProfile = (val:object) => api.post('/auth/UpdateProfile',val)
+export const createUser = (val:object) => api.post('/auth/createUser',val)
 
 //admin
 export const insertProduct = (val:FormData) => api.post('/admin/insertProduct',val)
@@ -20,6 +21,8 @@ export const insertItemCategory = (val:object) => api.post('/admin/insertItemCat
 export const insertCustomerTables = (val:object) => api.post('/admin/insertCustomerTables',val)
 export const checkOutOrder = (val:object) => api.post('/admin/checkOutOrder',val)
 export const emptyTable = (val:object) => api.post('/admin/emptyTable',val)
+export const deleteUser = (val:object) => api.post('/admin/deleteUser',val)
+export const updateRole = (val:object) => api.post('/admin/updateRole',val)
 export const subtractQuantity = (val:object) => api.post('/admin/subtractQuantity',val)
 export const deleteItems = (val:object) => api.post('/admin/deleteItems',val)
 export const deleteProduct = (val:object) => api.post('/admin/deleteProduct',val)

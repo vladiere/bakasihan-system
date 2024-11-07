@@ -10,6 +10,7 @@ export interface Meta {
 
 export interface userAuthT{
   username:string
+  role:string
 }
 export interface loginT{
   username:string
@@ -37,6 +38,16 @@ export interface productsDataT{
   actions:productsDataT
   id:number
   category_id:number
+  product_image:string
+  product_name:string
+  product_description:string
+  price:number
+  status:number
+}
+export interface productsListT{
+  actions:productsListT
+  id:number
+  category_name:string
   product_image:string
   product_name:string
   product_description:string
@@ -176,6 +187,14 @@ export interface usersT {
   id:number
   username:string
   status:string
+  first_name:string
+  last_name:string
+  gender:string
+}
+export interface createUserT{
+  id:number
+  username:string
+  password:string
   first_name:string
   last_name:string
   gender:string

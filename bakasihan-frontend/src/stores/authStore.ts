@@ -7,7 +7,8 @@ export const useAuthStore = defineStore('auth',()=>{
   const refreshToken = ref<string>('');
 
   const user = ref<userAuthT | null>({
-    username:''
+    username:'',
+    role:''
   })
   const logout = () => {
     localStorage.removeItem('accessToken');

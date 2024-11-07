@@ -87,7 +87,7 @@
             />
           </q-list>
         </q-expansion-item>
-        <q-expansion-item expand-separator>
+        <q-expansion-item expand-separator v-if="authStore.user && authStore.user.role === 'super_admin' ">
           <template v-slot:header>
             <q-item-section avatar>
               <q-icon color="accent" name="mdi-human" />

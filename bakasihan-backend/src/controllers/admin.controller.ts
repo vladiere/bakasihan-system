@@ -221,6 +221,57 @@ export const deleteTable = async(req:Request,res:Response)=>{
         return res.status(500).send({ message: "Something went wrong with the database." });
     }
 }
+export const updateRole = async(req:Request,res:Response) => {
+    try {
+        const {id,role} = req.body
+        const updateQuery = "UPDATE user_tbl SET role = ? WHERE id = ?"
+        const result = await executeQuery(updateQuery,[role,id])
+        if(result){
+            return res.status(200).send({message:"Successfully Updated"})
+        }
+    } catch (error) {
+        console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
+export const deleteUser = async(req:Request,res:Response)=>{
+    const {id} = req.body
+    try {
+        const transaction = "START TRANSACTION"
+        const deleteUserQuery = "DELETE FROM user_tbl WHERE id = ?"
+        const deleteUserInfo = "DELETE FROM userinfo_tbl WHERE user_id = ?"
+        const deleteToken = "DELETE FROM refresh_token WHERE user_id = ?"
+        const rollBack = "ROLLBACK"
+        const commit = "COMMIT"
+
+        await executeQuery(transaction,[])
+            const FirstDelete = await executeQuery(deleteUserQuery,[id])
+            if(!FirstDelete){
+                return res.status(409).send({message:"Error Deleting User"})
+            }
+
+            const secondDelete = await executeQuery(deleteUserInfo,[id])
+            if(!secondDelete){
+                await executeQuery(rollBack,[])
+                    return res.status(409).send({message:"Error Deleting UserInfo"})
+                
+            }
+
+            const thirdDelete = await executeQuery(deleteToken,[id])
+            if(!thirdDelete){
+                await executeQuery(rollBack,[])
+                    return res.status(409).send({message:"Error Deleting Token"})
+              
+            }
+
+                await executeQuery(commit,[])
+                return res.status(200).send({message:"Successfully Deleted"})
+    } catch (error) {
+        await executeQuery("ROLLBACK",[])
+         console.error(error); // Log detailed error for debugging
+        return res.status(500).send({ message: "Something went wrong with the database." });
+    }
+}
 export const emptyTable = async(req:Request,res:Response)=>{
     const {order_no,customer_name} = req.body
     try{

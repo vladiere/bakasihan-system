@@ -27,7 +27,9 @@ import { insertProduct,
     deleteProductCategory,
     AdminAllCustomerTable,
     deleteTable,
-    AdminList
+    AdminList,
+    deleteUser,
+    updateRole
  } from "../controllers/admin.controller";
 import { upload } from "../middleware/uploadImage.middleware";
 const admin = express.Router();
@@ -60,5 +62,7 @@ admin.post('/deleteItemsCategory',verifyToken,deleteItemsCategory)
 admin.post('/deleteProduct',verifyToken,deleteProduct)
 admin.post('/deleteProductCategory',verifyToken,deleteProductCategory)
 admin.post('/deleteTable',verifyToken,deleteTable)
+admin.post('/deleteUser',verifyToken,deleteUser)
+admin.post('/updateRole',verifyToken,updateRole)
 
 export default admin

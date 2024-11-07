@@ -14,5 +14,6 @@ export interface userDataT{
     id:number;
     username:string;
     password:string;
-    status:number
+    status:number;
+    role:string
 }
