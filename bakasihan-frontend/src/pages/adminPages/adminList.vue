@@ -1,7 +1,7 @@
 <template>
     <q-page padding>
         <div class="q-mb-lg">
-            <q-btn flat icon="mdi-plus"><q-tooltip>Add User(Admin)</q-tooltip></q-btn>
+            <q-btn icon="mdi-plus" label="Add User" color="primary" @click="addUserDialog = true"><q-tooltip>Add User(Admin)</q-tooltip></q-btn>
         </div>
       <q-input
         filled
@@ -23,38 +23,214 @@
         <template v-slot:body-cell-actions="props">
           <q-td>
             <q-btn
+            v-if="authStore.user && authStore.user.username !== props.row.username "
+            flat
+      icon="mdi-pencil-box-outline"
+      class="q-mx-xsm"
+      @click="openRoleDialog(props.row.id,props.row.role)"
+    >
+      <q-tooltip>Edit Role</q-tooltip>
+    </q-btn>
+            <q-btn
+            v-if="authStore.user && authStore.user.username !== props.row.username "
             flat
       icon="mdi-delete-outline"
       class="q-mx-xsm"
-      @click="handleDeleteCategory(props.row.id)"
+      @click="openDeleteDialog(props.row.id)"
     >
-      <q-tooltip>Delete</q-tooltip>
+      <q-tooltip>Delete User</q-tooltip>
     </q-btn>
           </q-td>
         </template>
       </q-table>
     </q-page>
+    <q-dialog v-model="editRoleDialog">
+        <q-card>
+            <q-card-section>
+                Edit Role
+            </q-card-section>
+            <q-card-section>
+                <q-select filled label="Select Role" v-model="role" :options="option"></q-select>
+            </q-card-section>
+            <q-separator/>
+            <q-card-section>
+                <q-btn flat icon="mdi-close" @click="editRoleDialog = false" class="q-mx-sm">
+                    <q-tooltip>Close</q-tooltip>
+                </q-btn>
+                <q-btn flat icon="mdi-check" class="q-mx-sm" @click="handleUpdateRole">
+                    <q-tooltip>Save</q-tooltip>
+                </q-btn>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
+    <q-dialog v-model="addUserDialog">
+    <q-card>
+        <q-card-section> <div style="font-size: clamp(0.9rem, 1vw + 0.3rem, 1.1rem);" class="q-mx-sm">Create User</div> </q-card-section>
+        <q-card-section>
+            <div class="row q-mt-lg">
+                    <q-input class="col col-md-11 q-mx-sm" filled v-model="formData.username" label="Username" />
+                </div>
+                <div class="row q-mt-lg">
+                    <q-input class="col col-md-11 q-mx-sm" filled v-model="formData.password" type="password" label="Password"/>
+                </div>
+                <div class="row q-mt-lg">
+                    <q-input class="col col-md-5 q-mx-sm" filled v-model="formData.first_name" label="Firstname" />
+                    <q-input class="col col-md-5 q-mx-sm" filled v-model="formData.last_name" label="Lastname" />
+                </div>
+                <div class="row q-mt-lg">
+                    <q-select class="col col-md-11 q-mx-sm" filled v-model="formData.gender" :options="genderOption" label="Gender"/>
+                </div>
+        </q-card-section>
+        <q-card-section>
+            <q-btn flat icon="mdi-close" @click="addUserDialog = false" class="q-mx-sm">
+                    <q-tooltip>Close</q-tooltip>
+                </q-btn>
+                <q-btn flat icon="mdi-check" class="q-mx-sm" @click="handleCreateUser">
+                    <q-tooltip>Save</q-tooltip>
+                </q-btn>
+        </q-card-section>
+    </q-card>
+    </q-dialog>
+    <q-dialog v-model="deleteDialog">
+        <q-card>
+            <q-card-section>Are you sure you want to delete this Row?</q-card-section>
+            <q-card-section>
+                <q-btn flat icon="mdi-close" @click="deleteDialog = false" class="q-mx-sm">
+                    <q-tooltip>No</q-tooltip>
+                </q-btn>
+                <q-btn flat icon="mdi-check" class="q-mx-sm" @click="handleDeleteUser(ID)">
+                    <q-tooltip>Yes</q-tooltip>
+                </q-btn>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
   </template>
   
   <script setup lang="ts">
   import { ref, onMounted, watch } from 'vue';
-  import { AdminList, deleteProductCategory } from 'src/services/api.services';
+  import { AdminList,createUser,deleteUser,updateRole } from 'src/services/api.services';
   import {
     TableRequestProps,
     usersDataT,
+    createUserT,
   } from 'src/components/models';
   import {useQuasar} from 'quasar'
+  import {useAuthStore} from '../../stores/authStore'
   
   const $q = useQuasar();
   const search = ref<string>('');
+  const authStore = useAuthStore()
+  const editRoleDialog = ref(false)
+  const addUserDialog = ref(false)
+  const genderOption = ref(['male','female'])
+  const option = ref(['admin','super_admin'])
   const loading = ref(false);
+  const role = ref('')
   const rows = ref<Array<usersDataT>>([]);
+    const ID = ref(0)
+    const deleteDialog = ref(false)
+    const openDeleteDialog = (val_id:number)=>{
+        ID.value = val_id
+        deleteDialog.value = true
+    } 
   interface Column {
     name: string;
     label: string;
     align: 'left' | 'center' | 'right';
     field: string | ((row: usersDataT) => usersDataT);
     sortable?: boolean;
+  }
+  const formData = ref<createUserT>({
+        id: 0,
+        username: '',
+        password: '',
+        first_name: '',
+        last_name: '',
+        gender: ''
+})
+const clearInputs = ()=>{
+    formData.value.username = '' 
+    formData.value.password = '' 
+        formData.value.first_name = '' 
+        formData.value.last_name = '' 
+        formData.value.gender = ''
+}
+const handleCreateUser = async()=>{
+    if( formData.value?.username === '' ||
+    formData.value?.password === '' ||
+        formData.value?.first_name === '' ||
+        formData.value?.last_name === '' ||
+        formData.value?.gender === ''){
+            $q.notify({
+        color: 'negative',
+        textColor: 'white',
+        icon: 'close',
+        message: "Inputs should be filled",
+      });
+        }
+        loading.value = true
+    await createUser({
+        username: formData.value.username,
+        password: formData.value.password,
+        first_name: formData.value.first_name,
+        last_name: formData.value.last_name,
+        gender: formData.value.gender
+    }).then((response)=>{
+        loading.value = false
+        clearInputs()
+        onRequest(
+        search.value,
+        pagination.value.page,
+        pagination.value.rowsPerPage
+      );
+      $q.notify({
+        color: 'positive',
+        textColor: 'white',
+        position: 'top',
+        icon: 'check',
+        message: response.data.message,
+      });
+    }).catch(error =>{
+        loading.value = false
+        $q.notify({
+        color: 'negative',
+        textColor: 'white',
+        icon: 'close',
+        message: error.response.data.message,
+      });
+    })
+}
+  const openRoleDialog = (val_id:number,val_role:string) => {
+    role.value = val_role
+    ID.value = val_id
+    editRoleDialog.value = true
+  }
+
+  const handleUpdateRole = async()=>{
+    await updateRole({
+        id:ID.value,
+        role:role.value
+    }).then(response =>{
+        onRequest(
+          search.value,
+          pagination.value.page,
+          pagination.value.rowsPerPage
+        );
+        $q.notify({
+          color: 'positive',
+          textColor: 'white',
+          position: 'top',
+          icon: 'check',
+          message: response.data.message,
+        });
+    }).catch(error => {
+        $q.notify({
+          color: 'negative',
+          textColor: 'white',
+          icon: 'close',
+          message: error.response.data.message,
+        });
+    })
   }
   const pagination = ref({
     page: 1,
@@ -152,9 +328,9 @@
     onRequest(search.value, pagination.value.page, pagination.value.rowsPerPage);
   });
   
-  const handleDeleteCategory = async(val_id:number)=>{
+  const handleDeleteUser = async(val_id:number)=>{
     loading.value = true
-    await deleteProductCategory({id:val_id}).then(response =>{
+    await deleteUser({id:val_id}).then(response =>{
       onRequest(
           search.value,
           pagination.value.page,

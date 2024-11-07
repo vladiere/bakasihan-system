@@ -16,7 +16,7 @@
         :columns="columns"
         :loading="loading"
         v-model:pagination="pagination"
-        :row-key="(row:productsDataT) => row.id"
+        :row-key="(row:productsListT) => row.id"
         @request="handleRequest"
       >
         <template v-slot:body-cell-product_image="props">
@@ -47,10 +47,11 @@
     <q-tooltip>Edit</q-tooltip>
   </q-btn>
             <q-btn
+            v-if="authStore.user && authStore.user.role === 'super_admin'"
             flat
     icon="mdi-delete-outline"
     class="q-mx-xsm"
-    @click="handleDeleteProduct(props.row.id)"
+    @click="openDeleteDialog(props.row.id)"
   >
     <q-tooltip>Delete</q-tooltip>
   </q-btn>
@@ -94,6 +95,7 @@
             color="dark"
             label="Product Name"
             class="col"
+            :readonly="cat_name.toLowerCase() === 'drinks'"
           />
           <q-input
             v-model="formdata.product_description"
@@ -139,12 +141,25 @@
       </q-card-section>
     </q-card>
   </q-dialog>
+  <q-dialog v-model="deleteDialog">
+        <q-card>
+            <q-card-section>Are you sure you want to delete this Row?</q-card-section>
+            <q-card-section>
+                <q-btn flat icon="mdi-close" @click="deleteDialog = false" class="q-mx-sm">
+                    <q-tooltip>No</q-tooltip>
+                </q-btn>
+                <q-btn flat icon="mdi-check" class="q-mx-sm" @click="handleDeleteProduct(ID || 0)">
+                    <q-tooltip>Yes</q-tooltip>
+                </q-btn>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import {
-  productsDataT,
+  productsListT,
   TableRequestProps,
 } from 'src/components/models';
 import {
@@ -156,15 +171,23 @@ updateProducts,
 } from 'src/services/api.services';
 import { ref, onMounted, watch } from 'vue';
 import {useQuasar} from 'quasar'
+import {useAuthStore} from 'src/stores/authStore'
 
 
 const $q = useQuasar();
+const authStore = useAuthStore()
 const loading = ref<boolean>(false);
 const foodDialog = ref(false)
 const search = ref<string>('');
 const preview = ref('')
+const cat_name = ref('')
 const Viewing = ref<string|null>('')
-const rows = ref<Array<productsDataT>>([]);
+const rows = ref<Array<productsListT>>([]);
+    const deleteDialog = ref(false)
+    const openDeleteDialog = (val_id:number)=>{
+        ID.value = val_id
+        deleteDialog.value = true
+    } 
   type formdataT = {
   product_image: File | null;
   category_name: string;
@@ -191,10 +214,11 @@ const foodstatus = ref<Array<{ status: number; status_name: string }>>([
 ]);
 const ID = ref<number | null>(0)
 
-const openFoodDialog = (val: productsDataT | null) => {
+const openFoodDialog = (val: productsListT | null) => {
   console.log(val);
   ID.value = val?.id || null
   Viewing.value = val?.product_image || null
+  cat_name.value = `${val?.category_name}`
   formdata.value.product_name = val?.product_name || null
   formdata.value.product_description = val?.product_description || null
   formdata.value.price = val?.price || null
@@ -230,7 +254,7 @@ interface Column {
   name: string;
   label: string;
   align: 'left' | 'center' | 'right';
-  field: string | ((row: productsDataT) => productsDataT);
+  field: string | ((row: productsListT) => productsListT);
   sortable?: boolean;
 }
 const pagination = ref({
@@ -287,7 +311,7 @@ const columns: Column[] = [
     name: 'actions',
     label: 'Action',
     align: 'center',
-    field: (row: productsDataT) => row, // Example field function
+    field: (row: productsListT) => row, // Example field function
   },
 ];
 

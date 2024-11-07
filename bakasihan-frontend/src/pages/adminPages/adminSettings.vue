@@ -4,7 +4,7 @@
             <q-card-section>
                 <h4>Personal Information</h4>
                 <h6>
-  Status: <span :class="formData.status === 'active' ? 'text-green-7' : 'text-red-7'">{{ formData.status }}</span>
+  Status: <span :class="formData.status === 'online' ? 'text-green-7' : 'text-red-7'">{{ formData.status }}</span>
 </h6>
                 <q-separator/>
                 <div class="row q-mt-lg">

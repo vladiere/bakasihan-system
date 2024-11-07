@@ -114,7 +114,8 @@
           v-if="
             orderStore.myOrder &&
             typeof orderStore.myOrder.order_process === 'number' &&
-            orderStore.myOrder.order_process === 1
+            orderStore.myOrder.order_process === 1 &&
+            drawer === false
           "
         />
         <q-space />
@@ -162,7 +163,7 @@
           v-for="order in orderStore.myOrder.orders"
           :key="order?.id"
         >
-          <h6 class="text-center">{{ order?.category_name }}</h6>
+          <h6 class="text-center">{{ order?.category_name.toUpperCase() }}</h6>
           <q-item v-for="prod in order?.products" :key="prod?.id">
             <q-item-section avatar>
               <q-avatar color="accent" text-color="white">
@@ -296,7 +297,11 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <q-card class="q-mx-lg q-mt-lg q-mb-lg">
+        <q-card-section>
+          <router-view />
+        </q-card-section>
+      </q-card>
     </q-page-container>
   </q-layout>
 </template>
@@ -466,4 +471,10 @@ onMounted(() => {
     width: 500px;
   }
 }
+
+/* .scroll, .scroll-x, .scroll-y {
+    background-image: url(/src/assets/logo.png);
+    background-repeat: no-repeat;
+    background-position: center;
+} */
 </style>

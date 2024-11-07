@@ -3,7 +3,7 @@ import { createUser,loginUser,Token,logout, getMyProfile, UpdateProfile } from "
 import verifyToken from '../utils/verifyToken.util';
 const auth = express.Router();
 
-auth.post('/register',createUser)
+auth.post('/createUser',verifyToken,createUser)
 auth.post('/login',loginUser)
 auth.post('/refresh-token',Token)
 auth.post('/logout',verifyToken,logout)

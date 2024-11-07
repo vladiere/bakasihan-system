@@ -20,16 +20,30 @@
       <template v-slot:body-cell-actions="props">
         <q-td>
           <q-btn
+          v-if="authStore.user && authStore.user.role === 'super_admin'"
           flat
     icon="mdi-delete-outline"
     class="q-mx-xsm"
-    @click="handleDeleteCategory(props.row.id)"
+    @click="openDeleteDialog(props.row.id)"
   >
     <q-tooltip>Delete</q-tooltip>
   </q-btn>
         </q-td>
       </template>
     </q-table>
+    <q-dialog v-model="deleteDialog">
+        <q-card>
+            <q-card-section>Are you sure you want to delete this Row?</q-card-section>
+            <q-card-section>
+                <q-btn flat icon="mdi-close" @click="deleteDialog = false" class="q-mx-sm">
+                    <q-tooltip>No</q-tooltip>
+                </q-btn>
+                <q-btn flat icon="mdi-check" class="q-mx-sm" @click="handleDeleteCategory(ID)">
+                    <q-tooltip>Yes</q-tooltip>
+                </q-btn>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -41,11 +55,19 @@ import {
   categoryDataT,
 } from 'src/components/models';
 import {useQuasar} from 'quasar'
+import {useAuthStore} from 'src/stores/authStore'
 
 const $q = useQuasar();
+const authStore = useAuthStore()
 const search = ref<string>('');
 const loading = ref(false);
 const rows = ref<Array<categoryDataT>>([]);
+  const ID = ref(0)
+    const deleteDialog = ref(false)
+    const openDeleteDialog = (val_id:number)=>{
+        ID.value = val_id
+        deleteDialog.value = true
+    } 
 interface Column {
   name: string;
   label: string;

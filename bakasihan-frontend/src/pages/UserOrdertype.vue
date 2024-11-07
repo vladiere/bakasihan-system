@@ -1,20 +1,22 @@
 <template>
-  <q-page>
+  <q-page padding>
     <div
-      class="justify-center btns"
-      v-if="
+    class="justify-center items-center btns center"
+    v-if="
         orderStore.myOrder &&
         typeof orderStore.myOrder.order_process === 'number' &&
         orderStore.myOrder.order_process === 2
-      "
+        "
     >
+    <h5 class="header text-center">Order Type</h5>
       <q-select
         v-model="order_type"
         dense
         label="select Order Type"
+        class="select"
         :options="options"
       />
-      <div class="btns flex justify-evenly">
+      <div class="flex justify-evenly buttons">
         <q-btn
           icon="undo"
           label="go back"
@@ -111,7 +113,35 @@ watchEffect(() => {
 </script>
 
 <style scoped>
-.btns {
+@media screen and (max-width:768px){
+  .btns {
+ width: 100%;
+ margin-top: 50%;
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ align-items: center;
+}
+.buttons{
   margin-top: 2%;
 }
+.select{
+  width: inherit;
+}
+}
+@media screen and (min-width:768px){
+  .btns {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+.buttons{
+  margin-top: 2%;
+}
+.select{
+  width: inherit;
+}
+}
+
 </style>

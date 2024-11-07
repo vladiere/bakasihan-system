@@ -76,7 +76,7 @@
   flat
     :icon="props.row.category_name.toLowerCase() === 'drinks' ? 'mdi-restart': 'mdi-delete-outline'"
     class="q-mx-xsm"
-    @click="handleDeleteItems(props.row.id,props.row.category_name)"
+    @click="openDeleteDialog(props.row.id,props.row.category_name)"
   >
     <q-tooltip><span v-if="props.row.category_name.toLowerCase() === 'drinks'">Reset</span><span v-else>Delete</span></q-tooltip>
   </q-btn>
@@ -205,6 +205,7 @@
             color="dark"
             label="Item Name"
             class="col"
+            :readonly="cat_name.toLowerCase() === 'drinks'"
           />
           <q-input
             v-model="dataInputs.quantity"
@@ -248,6 +249,19 @@
       </q-card-section>
     </q-card>
   </q-dialog>
+  <q-dialog v-model="deleteDialog">
+        <q-card>
+            <q-card-section>Are you sure you want to <span v-if="cat_name.toLowerCase() === 'drinks'">reset</span><span v-else>delete</span> this Row?</q-card-section>
+            <q-card-section>
+                <q-btn flat icon="mdi-close" @click="deleteDialog = false" class="q-mx-sm">
+                    <q-tooltip>No</q-tooltip>
+                </q-btn>
+                <q-btn flat icon="mdi-check" class="q-mx-sm" @click="handleDeleteItems(ID,cat_name)">
+                    <q-tooltip>Yes</q-tooltip>
+                </q-btn>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -279,10 +293,17 @@ const param = ref('')
 const $q = useQuasar();
 const viewData = ref<ItemsT | null>(null);
 const rows = ref<Array<ItemsDataT>>([]);
-const option = ref<Array<optionT>>([]);
-const selectedOption = ref<optionT | null>(null);
-const itemCategory = ref<Array<categoryT>>([]);
-const preview = ref('');
+  const option = ref<Array<optionT>>([]);
+    const selectedOption = ref<optionT | null>(null);
+    const itemCategory = ref<Array<categoryT>>([]);
+      const preview = ref('');
+      const cat_name = ref('')
+const deleteDialog = ref(false)
+    const openDeleteDialog = (val_id:number,val_cat_name:string)=>{
+        ID.value = val_id
+        cat_name.value = val_cat_name
+        deleteDialog.value = true
+    } 
 type formdataT = {
   item_category_id: number | null;
   item_picture: File | null;
@@ -444,16 +465,13 @@ onMounted(() => {
   getCategories();
 });
 
-const view = (data: ItemsT) => {
-  console.log(data);
-  viewData.value = { ...data };
-};
 const Viewing = ref('')
 const ID = ref(0)
 const openEditDialog = (data: ItemsT) => {
   param.value = 'Edit'
   viewData.value = { ...data };
   Viewing.value = viewData.value.item_picture
+  cat_name.value = viewData.value.category_name
   dataInputs.value.item_name = viewData.value.item_name
   dataInputs.value.quantity = viewData.value.quantity
   dataInputs.value.price = viewData.value.price
@@ -486,17 +504,17 @@ const handleInsertItem = async ( param: string) => {
   data.append('item_name', dataInputs.value.item_name);
   data.append('quantity', `${dataInputs.value.quantity}`);
   data.append('price', `${dataInputs.value.price}`);
-    loading.value = true;
-    switch (param) {
-      case "Insert":
-  if (checkDataInputs()) {
-    $q.notify({
+  switch (param) {
+    case "Insert":
+      loading.value = true;
+      if (checkDataInputs()) {
+        $q.notify({
         color: 'negative',
         textColor: 'white',
         icon: 'close',
         message: "inputs should not be empty",
       });
-  }else{
+    }else{
       await insertItems(data)
       .then((response) => {
         loading.value = false;
@@ -528,6 +546,7 @@ const handleInsertItem = async ( param: string) => {
       }
         break;
         case "Edit":
+      loading.value = true;
         await updateItems(data)
       .then((response) => {
         loading.value = false;
@@ -564,6 +583,7 @@ const handleInsertItem = async ( param: string) => {
 const handleDeleteItems = async(val_id:number,val_cat_name:string)=>{
   loading.value = true
   await deleteItems({id:val_id,category_name:val_cat_name}).then(response =>{
+    deleteDialog.value = false
     $q.notify({
         color: 'positive',
         textColor: 'white',
@@ -591,7 +611,6 @@ const getCategories = async () => {
   });
 };
 const addQuantityItem = async(val:number) =>{
-  loading.value = true
   await addQuantity({id:val}).then(response =>{
     $q.notify({
         color: 'positive',
@@ -608,12 +627,9 @@ const addQuantityItem = async(val:number) =>{
         icon: 'close',
         message: err.response.data.message,
       });
-  }).finally(()=>{
-    loading.value = false
   })
 }
 const subtractQuantityItem = async(val:number) =>{
-  loading.value = true
   await subtractQuantity({id:val}).then(response =>{
     $q.notify({
         color: 'positive',
@@ -630,8 +646,6 @@ const subtractQuantityItem = async(val:number) =>{
         icon: 'close',
         message: err.response.data.message,
       });
-  }).finally(()=>{
-    loading.value = false
   })
 }
 </script>

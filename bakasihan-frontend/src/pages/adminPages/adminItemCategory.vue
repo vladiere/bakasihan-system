@@ -27,11 +27,11 @@
       <template v-slot:body-cell-actions="props">
         <q-td>
           <q-btn
-          v-if="props.row.category_name.toLowerCase() != 'drinks'"
+          v-if="props.row.category_name.toLowerCase() !== 'drinks' && authStore.user && authStore.user.role === 'super_admin'"
           flat
     icon="mdi-delete-outline"
     class="q-mx-sm"
-    @click="handleDeleteCategory(props.row.id,props.row.category_name)"
+    @click="openDeleteDialog(props.row.id,props.row.category_name)"
   >
     <q-tooltip>Delete</q-tooltip>
   </q-btn>
@@ -76,6 +76,19 @@
       </q-card-section>
     </q-card>
   </q-dialog>
+  <q-dialog v-model="deleteDialog">
+        <q-card>
+            <q-card-section>Are you sure you want to <span v-if="cat_name.toLowerCase() === 'drinks'">reset</span><span v-else>delete</span> this Row?</q-card-section>
+            <q-card-section>
+                <q-btn flat icon="mdi-close" @click="deleteDialog = false" class="q-mx-sm">
+                    <q-tooltip>No</q-tooltip>
+                </q-btn>
+                <q-btn flat icon="mdi-check" class="q-mx-sm" @click="handleDeleteCategory(ID,cat_name)">
+                    <q-tooltip>Yes</q-tooltip>
+                </q-btn>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -91,8 +104,10 @@ import {
   categoryT,
 } from 'src/components/models';
 import { useQuasar } from 'quasar';
+import {useAuthStore} from 'src/stores/authStore'
 
 const search = ref<string>('');
+const authStore = useAuthStore()
 const loading = ref(false);
 const categoryDialog = ref(false);
 const $q = useQuasar();
@@ -108,6 +123,14 @@ interface Column {
   field: string | ((row: categoryDataT) => categoryDataT);
   sortable?: boolean;
 }
+const ID = ref(0)
+const cat_name = ref('')
+const deleteDialog = ref(false)
+    const openDeleteDialog = (val_id:number,val_cat_name:string)=>{
+        ID.value = val_id
+        cat_name.value = val_cat_name
+        deleteDialog.value = true
+    } 
 const pagination = ref({
   page: 1,
   rowsPerPage: 5,

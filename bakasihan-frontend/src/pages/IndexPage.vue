@@ -17,7 +17,7 @@
       v-for="category in productStore.productsMenu"
       :key="category?.id"
     >
-      <h5>{{ category?.category_name }}</h5>
+      <h5>{{ category?.category_name.toUpperCase() }}</h5>
 
       <div class="row items-center justify-evenly">
         <span v-if="category && category.products.length < 1"
