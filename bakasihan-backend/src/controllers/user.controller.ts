@@ -24,6 +24,21 @@ export const userReciept = async(req:Request,res:Response)=>{
 export const userCheckIfTheresSameOrderID = async(req:Request,res:Response)=>{
     return await checkIfTheresSameOrderID(req,res)
 }
+export const goBackToIndex = async(req:Request,res:Response) =>{
+    const {table_no} = req.body
+    try {
+        const updateQuery = "Update customer_table_tbl SET order_no = '', status = 1 WHERE table_no = ?"
+        const response = await executeQuery(updateQuery,[table_no])
+        if(response){
+            return res.status(200).send({message:"Table is now empty."})
+        }
+    } catch (error) {
+        console.error('Error occurred:', error);
+        if (!res.headersSent) {
+            return res.status(500).send({ message: error || "Something went wrong with the database." });
+        }
+    }
+}
 export const addUserOrder = async (req: Request, res: Response) => {
     const { order_no, orders, table_no, order_type, customer_name, total_amount } = req.body;
     const tableQuery = 'SELECT * FROM customer_table_tbl WHERE table_no = ?';

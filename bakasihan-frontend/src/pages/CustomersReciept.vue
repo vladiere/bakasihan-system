@@ -124,7 +124,8 @@ import {
   userReciept,
   humanizeDate,
   formatToCurrency,
-  downloadReciept
+  downloadReciept,
+  resetOrdersGoBacktoIndex,
 } from 'src/services/api.services';
 import { useOrderStore } from 'src/stores/orderStore';
 import { useQuasar } from 'quasar';
@@ -143,16 +144,52 @@ const created_time = computed(() => {
   return reciept.value ? humanizeDate(reciept.value.ctime) : '';
 });
 
-const gobackToIndex = () => {
-  orderStore.resetOrders();
-  window.location.reload();
+const gobackToIndex = async () => {
+  if (orderStore.myOrder?.order_type === 'dine in') {
+    console.log(orderStore.myOrder.table_no);
+    await resetOrdersGoBacktoIndex({
+      table_no: orderStore.myOrder.table_no,
+    })
+      .then((response) => {
+        $q.notify({
+          color: 'positive',
+          textColor: 'white',
+          icon: 'check',
+          message: response.data.message,
+        });
+        setTimeout(() => {
+          orderStore.resetOrders();
+          window.location.reload();
+        }, 1000);
+      })
+      .catch((error) => {
+        $q.notify({
+          color: 'negative',
+          textColor: 'white',
+          icon: 'close',
+          message: error.response.data.message,
+        });
+      });
+  } else {
+    $q.notify({
+      color: 'positive',
+      textColor: 'white',
+      icon: 'check',
+      message: 'order has been reseted',
+    });
+    setTimeout(() => {
+      orderStore.resetOrders();
+      window.location.reload();
+    }, 1000);
+  }
 };
 
-const downloadRecieptData = ()=>{
-  const recieptData = document.querySelector('#customers-receipt') as HTMLDataElement;
-  downloadReciept(recieptData)
-}
-
+const downloadRecieptData = () => {
+  const recieptData = document.querySelector(
+    '#customers-receipt'
+  ) as HTMLDataElement;
+  downloadReciept(recieptData);
+};
 
 const handleGetReciept = async () => {
   const postData = {
@@ -193,7 +230,7 @@ watchEffect(() => {
         message: data,
       });
     }
-    window.location.reload()
+    window.location.reload();
   });
   socket.on('disconnect', () => {
     console.log('Disconnected from the server');
@@ -272,11 +309,11 @@ onMounted(() => {
 .goback-btns {
   margin-bottom: 4%;
 }
-.total-cash{
+.total-cash {
   margin-right: 7%;
   text-align: center;
 }
-.total-change{
+.total-change {
   margin-right: 7%;
   text-align: center;
 }

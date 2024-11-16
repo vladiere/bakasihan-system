@@ -351,22 +351,30 @@ const addCustomer = (customer_name: string) => {
   $q.loading.show({
     message: 'adding Customer order',
   });
-  try {
-    orderStore.addCustomerName(customer_name);
-    timer = setTimeout(() => {
-      $q.loading.show({
-        backgroundColor: 'positive',
-        messageColor: 'white',
-        message: 'Customer has been Added',
-      });
-
+  if (customer_name === '') {
+    $q.loading.show({
+      backgroundColor: 'negative',
+      messageColor: 'white',
+      message: 'Customer is not been added',
+    });
+  } else {
+    try {
+      orderStore.addCustomerName(customer_name);
       timer = setTimeout(() => {
-        $q.loading.hide();
-        timer = void 0;
-      }, 500);
-    }, 200);
-  } catch (error) {
-    console.log(error);
+        $q.loading.show({
+          backgroundColor: 'positive',
+          messageColor: 'white',
+          message: 'Customer has been Added',
+        });
+
+        timer = setTimeout(() => {
+          $q.loading.hide();
+          timer = void 0;
+        }, 500);
+      }, 200);
+    } catch (error) {
+      console.log(error);
+    }
   }
 };
 const proccedToOrderType = async () => {
@@ -375,6 +383,7 @@ const proccedToOrderType = async () => {
   });
   let OrderNumber = generateRandomNumber(1, 1000);
   if (
+    orderStore.myOrder?.customer_name === '' ||
     orderStore.myOrder?.customer_name == null ||
     orderStore.myOrder.orders.length < 1
   ) {

@@ -99,7 +99,7 @@ const handleLogin = async () => {
       authStore.setAccessToken(response.data.accessToken);
       authStore.setRefreshToken(response.data.refreshToken);
       authStore.setUserAuth(JSON.stringify(response.data.user));
-      router.push({ name: 'admin_index' });
+      router.push('/admin/home');
     })
     .catch((err) => {
       loading.value = false;
