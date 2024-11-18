@@ -29,84 +29,96 @@
       </div>
     </div>
     <div class="q-px-lg q-mt-lg">
-
       <q-input
-          filled
-          v-model="search"
-          label="Search"
-          debounce="1000"
-          @input="onSearch"
-        />
-        <q-table
-          title="Customer's Tables List"
-          :rows-per-page-options="[5, 10, 20, 50]"
-          :rows="rows"
-          :columns="columns"
-          :loading="loading"
-          v-model:pagination="pagination"
-          :row-key="(row:categoryDataT) => row.id"
-          @request="handleRequest"
-        >
+        filled
+        v-model="search"
+        label="Search"
+        debounce="1000"
+        @input="onSearch"
+      />
+      <q-table
+        title="Customer's Tables List"
+        :rows-per-page-options="[5, 10, 20, 50]"
+        :rows="rows"
+        :columns="columns"
+        :loading="loading"
+        v-model:pagination="pagination"
+        :row-key="(row:categoryDataT) => row.id"
+        @request="handleRequest"
+      >
         <template v-slot:body-cell-status="props">
-        <q-td>
-          <span v-if="props.row.status === 1">Vacant</span>
-          <span v-else>Occupied</span>
-        </q-td>
+          <q-td>
+            <span v-if="props.row.status === 1">Vacant</span>
+            <span v-else>Occupied</span>
+          </q-td>
         </template>
-          <template v-slot:body-cell-actions="props">
-            <q-td>
-              <q-btn
+        <template v-slot:body-cell-actions="props">
+          <q-td>
+            <q-btn
               v-if="authStore.user && authStore.user.role === 'super_admin'"
               flat
-        icon="mdi-delete-outline"
-        class="q-mx-xsm"
-        @click="openDeleteDialog(props.row.id)"
-      >
-        <q-tooltip>Delete</q-tooltip>
-      </q-btn>
-            </q-td>
-          </template>
-        </q-table>
+              icon="mdi-delete-outline"
+              class="q-mx-xsm"
+              @click="openDeleteDialog(props.row.id)"
+            >
+              <q-tooltip>Delete</q-tooltip>
+            </q-btn>
+          </q-td>
+        </template>
+      </q-table>
     </div>
     <q-dialog v-model="deleteDialog">
-        <q-card>
-            <q-card-section>Are you sure you want to delete this Row?</q-card-section>
-            <q-card-section>
-                <q-btn flat icon="mdi-close" @click="deleteDialog = false" class="q-mx-sm">
-                    <q-tooltip>No</q-tooltip>
-                </q-btn>
-                <q-btn flat icon="mdi-check" class="q-mx-sm" @click="handleDeleteCategory(ID)">
-                    <q-tooltip>Yes</q-tooltip>
-                </q-btn>
-            </q-card-section>
-        </q-card>
+      <q-card>
+        <q-card-section
+          >Are you sure you want to delete this Row?</q-card-section
+        >
+        <q-card-section>
+          <q-btn
+            flat
+            icon="mdi-close"
+            @click="deleteDialog = false"
+            class="q-mx-sm"
+          >
+            <q-tooltip>No</q-tooltip>
+          </q-btn>
+          <q-btn
+            flat
+            icon="mdi-check"
+            class="q-mx-sm"
+            @click="handleDeleteCategory(ID)"
+          >
+            <q-tooltip>Yes</q-tooltip>
+          </q-btn>
+        </q-card-section>
+      </q-card>
     </q-dialog>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted,watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { customersTableDataT } from 'src/components/models';
 import TableComponent from 'components/TableComponent.vue';
-import { AdminAllCustomerTable, adminCustomersTable, deleteTable } from 'src/services/api.services';
 import {
-  TableRequestProps,
-  categoryDataT,
-} from 'src/components/models';
-import {useQuasar} from 'quasar'
-import {useAuthStore} from 'src/stores/authStore'
+  AdminAllCustomerTable,
+  adminCustomersTable,
+  deleteTable,
+} from 'src/services/api.services';
+import { TableRequestProps, categoryDataT } from 'src/components/models';
+import { useQuasar } from 'quasar';
+import { useAuthStore } from 'src/stores/authStore';
 
 const $q = useQuasar();
-  const search = ref<string>('');
-  const authStore = useAuthStore()
+const search = ref<string>('');
+const authStore = useAuthStore();
 const loading = ref(false);
 const rows = ref<Array<customersTableDataT>>([]);
-  const ID = ref(0)
-    const deleteDialog = ref(false)
-    const openDeleteDialog = (val_id:number)=>{
-        ID.value = val_id
-        deleteDialog.value = true
-    } 
+const ID = ref(0);
+const deleteDialog = ref(false);
+const openDeleteDialog = (val_id: number) => {
+  ID.value = val_id;
+  deleteDialog.value = true;
+};
 interface Column {
   name: string;
   label: string;
@@ -195,7 +207,6 @@ onMounted(() => {
   onRequest(search.value, pagination.value.page, pagination.value.rowsPerPage);
 });
 
-
 const customersTables = ref<Array<customersTableDataT>>([]);
 const handleTables = async () => {
   await adminCustomersTable()
@@ -211,15 +222,16 @@ const handleTables = async () => {
 onMounted(() => {
   handleTables();
 });
-const handleDeleteCategory = async(val_id:number)=>{
-  loading.value = true
-  await deleteTable({id:val_id}).then(response =>{
-    onRequest(
+const handleDeleteCategory = async (val_id: number) => {
+  loading.value = true;
+  await deleteTable({ id: val_id })
+    .then((response) => {
+      onRequest(
         search.value,
         pagination.value.page,
         pagination.value.rowsPerPage
       );
-      handleTables()
+      handleTables();
       $q.notify({
         color: 'positive',
         textColor: 'white',
@@ -227,15 +239,18 @@ const handleDeleteCategory = async(val_id:number)=>{
         icon: 'check',
         message: response.data.message,
       });
-  }).catch(error =>{
-    $q.notify({
+      deleteDialog.value = false;
+    })
+    .catch((error) => {
+      $q.notify({
         color: 'negative',
         textColor: 'white',
         icon: 'close',
         message: error.response.data.message,
       });
-  }).finally(()=>{
-loading.value = false
-  })
-}
+    })
+    .finally(() => {
+      loading.value = false;
+    });
+};
 </script>
