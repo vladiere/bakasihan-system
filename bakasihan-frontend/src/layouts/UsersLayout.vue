@@ -342,11 +342,18 @@ const addCustomer = (customer_name: string) => {
     message: 'adding Customer order',
   });
   if (customer_name === '') {
-    $q.loading.show({
-      backgroundColor: 'negative',
-      messageColor: 'white',
-      message: 'Customer is not been added',
-    });
+    timer = setTimeout(() => {
+      $q.loading.show({
+        backgroundColor: 'negative',
+        messageColor: 'white',
+        message: 'Customer has not been Added',
+      });
+
+      timer = setTimeout(() => {
+        $q.loading.hide();
+        timer = void 0;
+      }, 500);
+    }, 200);
   } else {
     try {
       orderStore.addCustomerName(customer_name);
