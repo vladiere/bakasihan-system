@@ -134,6 +134,12 @@ export const deleteItemsCategory = async(req:Request,res:Response)=>{
 export const insertCustomerTables = async(req:Request,res:Response)=>{
     try {
         const {table_no} = req.body
+        const checkQuery = "SELECT table_no FROM customer_table_tbl WHERE table_no = ?"
+
+        const check = await executeQuery(checkQuery,[table_no]) as Array<any>
+        if(check.length > 0){
+            return res.status(409).send({message:"Table Number is already exist"})
+        }
         const insertQuery = 'INSERT INTO customer_table_tbl(table_no)VALUES(?)'
         const result = await executeQuery(insertQuery,[table_no])
         if(!result){
