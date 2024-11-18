@@ -278,14 +278,6 @@
           <q-btn
             dense
             rounded
-            color="grey-8"
-            label="hold"
-            class="col"
-            icon="stop"
-          />
-          <q-btn
-            dense
-            rounded
             icon="skip_next"
             color="accent"
             label="proceed"
@@ -326,9 +318,7 @@ const customers_name = ref<string>('');
 const orderStore = useOrderStore();
 let timer: NodeJS.Timeout | undefined;
 const productStore = useProductStore();
-const onItemClick = () => {
-  console.log('Clicked');
-};
+
 watch(
   () => router.currentRoute.value.name,
   (newVal, oldVal) => {
