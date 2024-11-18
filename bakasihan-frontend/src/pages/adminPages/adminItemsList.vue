@@ -521,6 +521,7 @@ const closeEditDialog = () => {
   ItemsEditDialog.value = false;
 };
 const handleInsertItem = async (param: string) => {
+  loading.value = true;
   let data = new FormData();
   data.append('item_category_id', `${selectedOption.value?.value}`);
   if (dataInputs.value.item_picture) {
@@ -603,6 +604,7 @@ const handleInsertItem = async (param: string) => {
         });
       break;
   }
+  loading.value = false;
 };
 
 const handleDeleteItems = async (val_id: number, val_cat_name: string) => {

@@ -134,6 +134,9 @@ export const deleteItemsCategory = async(req:Request,res:Response)=>{
 export const insertCustomerTables = async(req:Request,res:Response)=>{
     try {
         const {table_no} = req.body
+        if(table_no === ''){
+            return res.status(409).send({message:"table number should not be empty!!"})
+        }
         const checkQuery = "SELECT table_no FROM customer_table_tbl WHERE table_no = ?"
 
         const check = await executeQuery(checkQuery,[table_no]) as Array<any>
@@ -154,6 +157,9 @@ export const insertCustomerTables = async(req:Request,res:Response)=>{
 export const insertProductCategory = async(req:Request,res:Response)=>{
     try {
         const {category_name} = await req.body;
+        if(category_name === ''){
+            return res.status(409).send({message:"category name should not be empty!!"})
+        }
         const checkQuery = "SELECT category_name FROM product_categories_tbl WHERE category_name = ?"
 
         const check = await executeQuery(checkQuery,[category_name]) as Array<any>
@@ -175,6 +181,10 @@ export const insertProductCategory = async(req:Request,res:Response)=>{
 export const insertItemCategory = async(req:Request,res:Response)=>{
     try {
         const {category_name} = await req.body;
+        if(category_name === ''){
+            return res.status(409).send({message:"category name should not be empty!!"})
+        }
+
         const checkQuery = "SELECT category_name FROM items_category_tbl WHERE category_name = ?"
 
         const check = await executeQuery(checkQuery,[category_name]) as Array<any>
