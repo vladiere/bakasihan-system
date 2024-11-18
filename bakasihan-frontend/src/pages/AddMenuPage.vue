@@ -277,6 +277,7 @@ const handleInsertProductCategory = async () => {
       });
     })
     .catch((error) => {
+      loading.value = false;
       $q.notify({
         color: 'negative',
         textColor: 'white',
