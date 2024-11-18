@@ -263,6 +263,7 @@ const handleDeleteCategory = async (val_id: number, val_cat_name: string) => {
         icon: 'check',
         message: response.data.message,
       });
+      deleteDialog.value = false;
     })
     .catch((error) => {
       $q.notify({
