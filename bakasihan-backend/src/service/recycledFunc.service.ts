@@ -172,10 +172,10 @@ export const getAllAdminProducts = async(req: Request, res: Response) => {
         FROM products_tbl as product 
         LEFT OUTER JOIN product_categories_tbl as category 
         ON category.id = product.category_id 
-        ORDER BY product.id DESC
         WHERE product.product_name LIKE ? 
-          OR product.product_description LIKE ? 
-          OR category.category_name LIKE ? 
+        OR product.product_description LIKE ? 
+        OR category.category_name LIKE ? 
+        ORDER BY product.id DESC
         LIMIT ? OFFSET ?`;
   
       const result = await executeQuery(getQuery, [searchPattern, searchPattern, searchPattern, limit, offset]);
