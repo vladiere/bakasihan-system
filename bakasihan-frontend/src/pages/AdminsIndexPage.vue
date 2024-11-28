@@ -85,17 +85,13 @@ watch(() => dashboardStore.salesData, async (newSalesData) => {
   createChart("Sales Data", mybackground, chartData.value, mylabel, canvas, 'bar' as keyof ChartTypeRegistry);
 });
 
-console.log("myData",dashboardStore.monthlySales)
 
 watch(() => dashboardStore.monthlySales, async (salesMonthly) => {
-  console.log("monthly",salesMonthly)
 
   monthlySalesData.value = [];
   monthlySalesData.value.push(...salesMonthly.map(data => parseInt(data.sales)));
   monthlySalesLabel.value = [];
   monthlySalesLabel.value.push(...salesMonthly.map(data => humanizeDateMonthlyDate(data.data_date)));
-console.log("my monthly sales :",monthlySalesData.value)
-console.log("my monthly sales Label :",monthlySalesLabel.value)
   if (chartInstance.value) {
     chartInstance.value.destroy();
     chartInstance.value = null;
@@ -108,14 +104,11 @@ console.log("my monthly sales Label :",monthlySalesLabel.value)
 }, { immediate: false });
 
 watch(() => dashboardStore.weeklySales, async (salesWeekly) => {
-  console.log("weekly",salesWeekly)
 
   weeklySalesData.value = [0];
   weeklySalesData.value.push(...salesWeekly.map(data => parseInt(data.sales)));
   weeklySalesLabel.value = [""];
   weeklySalesLabel.value.push(...salesWeekly.map(data => String(data.data_date)));
-console.log("my weekly sales :",weeklySalesData.value)
-console.log("my weekly sales Label :",weeklySalesLabel.value)
   if (chartInstance.value) {
     chartInstance.value.destroy();
     chartInstance.value = null;
@@ -131,8 +124,6 @@ console.log("my weekly sales Label :",weeklySalesLabel.value)
 // Create chart function
 const createChart = (dataset_label:string,background: Array<string|null>,data: Array<number | null>,labels: Array<string | null>,canvas: HTMLCanvasElement,bar_type: keyof ChartTypeRegistry) => {
   const ctx = canvas.getContext('2d');
-console.log("datalabels",labels)
-console.log("data",data)
   if (ctx) {
     const validBackground = background.filter((color): color is string => color !== null);
     return new Chart(ctx, {
