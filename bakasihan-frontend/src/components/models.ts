@@ -199,3 +199,17 @@ export interface createUserT{
   last_name:string
   gender:string
 }
+export interface PartialpullOutInventoryDataT{
+  item_id:number | null
+  item_name:string
+  quantity:number
+}
+export interface PartialpullOutInventoryFormDataT{
+  item_id:number |null
+  quantity:number
+}
+export interface itemSelectedPulloutDataT{
+  id:number
+  item_name:string
+  remaining_quantity:number
+}

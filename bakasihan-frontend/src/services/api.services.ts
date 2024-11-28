@@ -42,9 +42,10 @@ export const adminNewOrdersPaid = (param:object) =>api.get('/admin/adminNewOrder
 export const adminCustomersTable = () =>api.get('/admin/adminCustomersTable')
 export const getAdminItemDistictCategory = () =>api.get('/admin/getAdminItemDistictCategory')
 export const adminGetAllDataDashBoardRequired = () =>api.get('/admin/adminGetAllDataDashBoardRequired')
-export const userCustomersTable = () =>api.get('/user/userCustomersTable')
+export const getAdminItemAll = () =>api.get('/admin/getAdminItemAll')
 
 //user
+export const userCustomersTable = () =>api.get('/user/userCustomersTable')
 export const getProductCategories = (val:object) => api.post('/user/userGetProductCategories',val)
 export const addUserOrder = (val:object) => api.post('/user/addUserOrder',val)
 export const userReciept = (val:object) => api.post('/user/userReciept',val)

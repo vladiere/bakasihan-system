@@ -9,7 +9,8 @@ import { getAllProductsCategories,
      getAllDataDashBoardRequired,
      getOrderHistoryData,
      getAdminCustomerTable,
-     getAdminList
+     getAdminList,
+     getItemAll
     } from '../service/recycledFunc.service';
 import { Request,Response } from "express";
 import { ItemsDataT } from '@/types/items.types';
@@ -17,6 +18,11 @@ import { ItemsDataT } from '@/types/items.types';
 type categories = {
     category_name:string
 }
+type QueryResult = {
+    insertId: number;
+    affectedRows: number;
+    // Include other relevant properties if needed
+  };
 export const deleteProductCategory = async(req:Request,res:Response)=>{
     try {
         const {id} = req.body
@@ -71,12 +77,12 @@ export const updateProducts = async(req: Request, res: Response) =>{
 export const insertProduct = async (req: Request, res: Response) => {
     const checkProductQueryDrinks = "SELECT category_name FROM product_categories_tbl WHERE id = ?";
     const checkItemsIfExistQuery = "SELECT a.id, b.category_name, a.item_picture, a.item_name, a.quantity, a.remaining_quantity, a.price, a.total_amount, a.purchase_date FROM items_tbl a LEFT JOIN items_category_tbl b ON b.id = a.item_category_id WHERE LOWER(b.category_name) = LOWER(?) AND LOWER(a.item_name) = LOWER(?)";
-    const checkProductNameExistsQuery = "SELECT * FROM products_tbl WHERE LOWER(product_name) = LOWER(?)"; // New query to check for existing product name
+    const checkProductNameExistsQuery = "SELECT * FROM products_tbl WHERE LOWER(product_name) = LOWER(?) AND DATE(created_at) = CURDATE()"; // New query to check for existing product name
 
     try {
         const product_image = req.file as Express.Multer.File | undefined;
-        const { category_id, product_name, product_description, price } = req.body;
-
+        const { category_id, product_name, product_description, price,ingredients } = req.body;
+        
         if (!product_image) {
             return res.status(400).send({ message: 'No file uploaded.' });
         }
@@ -94,17 +100,39 @@ export const insertProduct = async (req: Request, res: Response) => {
             if (checkIfDrinkExist.length < 1) {
                 return res.status(409).send({ message: "Product Drink does not exist in the inventory." });
             }
+        }else{
+            const parsedIngredients = JSON.parse(ingredients)
+            const selectItemQuery = "SELECT remaining_quantity, price FROM items_tbl WHERE id = ?"
+            const insertPullout_inventory_tbl = "INSERT INTO pullout_inventory_tbl(product_id,item_id,quantity,total_amount)VALUES(?,?,?,?)"
+            const updateItemsQuantity = "UPDATE items_tbl SET remaining_quantity = ?  WHERE id = ?"
+            const imagePath = `images/${product_image.filename}`;
+            const insertQuery = 'INSERT INTO products_tbl (category_id, product_image, product_name, product_description, price) VALUES (?, ?, ?, ?, ?)';
+            const result = await executeQuery(insertQuery, [category_id, imagePath, product_name, product_description, price]) as QueryResult;
+            
+            for (let index = 0; index < parsedIngredients.length; index++) {
+            let totalamount = 0
+            const [itemsPull] = await executeQuery(selectItemQuery,[parsedIngredients[index].item_id]) as Array<any>
+            totalamount = itemsPull.price * parsedIngredients[index].quantity
+            if(itemsPull.remaining_quantity < parsedIngredients[index].quantity){
+                return res.status(409).send({ message: "Quantity should not less than the inventory." });
+            }
+            let newProposedQuantity = 0
+            newProposedQuantity = Math.floor(itemsPull.remaining_quantity - parsedIngredients[index].quantity)
+            const newInsert = await executeQuery(insertPullout_inventory_tbl,[result.insertId,parsedIngredients[index].item_id,parsedIngredients[index].quantity,totalamount])
+            if(newInsert){
+                if(await executeQuery(updateItemsQuantity,[newProposedQuantity,parsedIngredients[index].item_id])){
+                    return res.status(200).send({ message: "Successfully inserted." });
+                }
+                
+            }
+           }
+            if (!result) {
+                return res.status(402).send({ message: "Error inserting product." });
+            }
         }
 
-        const imagePath = `images/${product_image.filename}`;
-        const insertQuery = 'INSERT INTO products_tbl (category_id, product_image, product_name, product_description, price) VALUES (?, ?, ?, ?, ?)';
-        const result = await executeQuery(insertQuery, [category_id, imagePath, product_name, product_description, price]);
 
-        if (!result) {
-            return res.status(402).send({ message: "Error inserting product." });
-        }
 
-        return res.status(200).send({ message: "Successfully inserted." });
     } catch (error) {
         console.error(error); // Log detailed error for debugging
         return res.status(500).send({ message: "Something went wrong with the database." });
@@ -207,6 +235,9 @@ export const AdminAllCustomerTable = async (req:Request,res:Response) => {
 }
 export const AdminList = async (req:Request,res:Response) => {
     return await getAdminList(req,res)
+}
+export const getAdminItemAll = async (req:Request,res:Response) => {
+    return await getItemAll(req,res)
 }
 export const deleteTable = async(req:Request,res:Response)=>{
     try {

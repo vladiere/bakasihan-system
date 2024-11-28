@@ -132,7 +132,9 @@
             orderStore.myOrder.order_process === 1 &&
             drawer === false
           "
-        />
+        >
+        <q-badge color="red" floating>{{ orderStore.myOrderCount }}</q-badge>
+      </q-btn>
       </q-toolbar>
     </q-header>
 
@@ -326,9 +328,7 @@ const customers_name = ref<string>('');
 const orderStore = useOrderStore();
 let timer: NodeJS.Timeout | undefined;
 const productStore = useProductStore();
-const onItemClick = () => {
-  console.log('Clicked');
-};
+
 watch(
   () => router.currentRoute.value.name,
   (newVal, oldVal) => {

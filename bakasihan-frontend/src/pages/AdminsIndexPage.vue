@@ -1,8 +1,5 @@
 <template>
   <q-page padding>
-    <div class="flex justify-end" style="margin-bottom: 3%">
-      <q-btn label="Generate Report" icon="report" color="primary" />
-    </div>
     <q-row class="first-grid-view">
       <div v-for="(item, index) in dashboardStore.salesData" :key="index">
         <q-card class="sales-card" :color="item.color" text-color="white">
@@ -66,11 +63,14 @@ const weeklySalesData = ref<Array<number>>([])
   console.log(datenow)
 // Watch for changes in sales values and update chart data accordingly
 watch(() => dashboardStore.salesData, async (newSalesData) => {
-  // Assuming you want to update the chart with new sales data here
-  chartData.value = newSalesData.map(item => {
-  const salesValue = item.sales.replace(/[^0-9.-]+/g, ""); // Remove any non-numeric characters
-  return parseFloat(salesValue); // Use parseFloat for decimal values
-});
+  // Filter out the "New Orders Arrived" entry
+  const filteredSalesData = newSalesData.filter(item => item.title !== 'New Orders Arrived');
+
+  // Assuming you want to update the chart with filtered sales data here
+  chartData.value = filteredSalesData.map(item => {
+    const salesValue = item.sales.replace(/[^0-9.-]+/g, ""); // Remove any non-numeric characters
+    return parseFloat(salesValue); // Use parseFloat for decimal values
+  });
 
   if (chartInstance.value) {
     chartInstance.value.destroy();
@@ -79,10 +79,12 @@ watch(() => dashboardStore.salesData, async (newSalesData) => {
 
   await nextTick();
   const canvas = document.getElementById('salesChart') as HTMLCanvasElement;
-const mylabel = ['Today', 'This Week', 'This Month', 'This Year', 'New Orders']
-const mybackground = ['green', 'blue', 'orange', 'red', 'yellow']
-  createChart("Sample Sales",mybackground,chartData.value,mylabel,canvas,'bar' as keyof ChartTypeRegistry);
+  const mylabel = filteredSalesData.map(item => item.title); // Update labels dynamically
+  const mybackground = ['green', 'blue', 'orange', 'red', 'yellow']; // Adjust as needed
+
+  createChart("Sales Data", mybackground, chartData.value, mylabel, canvas, 'bar' as keyof ChartTypeRegistry);
 });
+
 console.log("myData",dashboardStore.monthlySales)
 
 watch(() => dashboardStore.monthlySales, async (salesMonthly) => {
@@ -93,6 +95,7 @@ watch(() => dashboardStore.monthlySales, async (salesMonthly) => {
   monthlySalesLabel.value = [];
   monthlySalesLabel.value.push(...salesMonthly.map(data => humanizeDateMonthlyDate(data.data_date)));
 console.log("my monthly sales :",monthlySalesData.value)
+console.log("my monthly sales Label :",monthlySalesLabel.value)
   if (chartInstance.value) {
     chartInstance.value.destroy();
     chartInstance.value = null;
@@ -112,6 +115,7 @@ watch(() => dashboardStore.weeklySales, async (salesWeekly) => {
   weeklySalesLabel.value = [""];
   weeklySalesLabel.value.push(...salesWeekly.map(data => String(data.data_date)));
 console.log("my weekly sales :",weeklySalesData.value)
+console.log("my weekly sales Label :",weeklySalesLabel.value)
   if (chartInstance.value) {
     chartInstance.value.destroy();
     chartInstance.value = null;

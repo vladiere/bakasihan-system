@@ -225,7 +225,7 @@ const confirmPayment = async () => {
 };
 
 const gobackToIndex = async() => {
-  if(reciept.value && reciept.value?.order_type === 'dine in' && reciept.value.status === "unpaid"){
+  if(reciept.value && reciept.value?.order_type === 'dine in' && reciept.value.status === "paid"){
     await emptyTable({
       order_no: route.params.order_no,
     customer_name: route.params.customer_name

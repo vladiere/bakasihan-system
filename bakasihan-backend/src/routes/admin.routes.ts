@@ -29,7 +29,8 @@ import { insertProduct,
     deleteTable,
     AdminList,
     deleteUser,
-    updateRole
+    updateRole,
+    getAdminItemAll
  } from "../controllers/admin.controller";
 import { upload } from "../middleware/uploadImage.middleware";
 const admin = express.Router();
@@ -44,6 +45,7 @@ admin.get('/adminNewOrdersUnpaid',verifyToken,adminNewOrdersUnpaid)
 admin.get('/adminGetAllDataDashBoardRequired',verifyToken,adminGetAllDataDashBoardRequired)
 admin.get('/adminNewOrdersPaid',verifyToken,adminNewOrdersPaid)
 admin.get('/AdminList',verifyToken,AdminList)
+admin.get('/getAdminItemAll',verifyToken,getAdminItemAll)
 admin.get('/getAdminItemDistictCategory',verifyToken,getAdminItemDistictCategory)
 admin.get('/adminCustomersTable',verifyToken,adminCustomersTable)
 admin.post('/insertProduct',upload.single('product_image'),verifyToken,insertProduct)

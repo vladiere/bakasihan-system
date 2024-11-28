@@ -17,7 +17,12 @@ export const useOrderStore = defineStore('order', () => {
     total_amount: 0,
     order_process:1
   });
+  const storedMyOrderCount = localStorage.getItem('myOrderCount')
+  const myOrderCount = ref<number>(storedMyOrderCount ? JSON.parse(storedMyOrderCount): 0) 
 
+  watch(myOrderCount,(newCOunt)=>{
+    localStorage.setItem('myOrderCount',JSON.stringify(newCOunt))
+  },{deep:true})
   // Watch myOrder changes and save them to localStorage
   watch(myOrder, (newOrder) => {
     localStorage.setItem('myOrder', JSON.stringify(newOrder));
@@ -50,6 +55,7 @@ export const useOrderStore = defineStore('order', () => {
         myOrder.value.total_amount += order.price || 0;
       }
     }
+    myOrderCount.value += 1
   };
 
   const removeOrders = (categoryID: number, orderID: number) => {
@@ -71,6 +77,7 @@ export const useOrderStore = defineStore('order', () => {
     if (myOrder.value?.orders[categoryIndex]?.products.length === 0) {
       myOrder.value.orders.splice(categoryIndex, 1);
     }
+    myOrderCount.value -= 1
   };
 
   const addCustomerName = (input: string) => {
@@ -130,6 +137,7 @@ if (product?.quantity && product.quantity > 1) {
       total_amount: 0,
       order_process: 1,
     };
+    myOrderCount.value = 0
   };
 
   const proceedOrder = () => {
@@ -186,7 +194,8 @@ if (product?.quantity && product.quantity > 1) {
     removeOrders,
     addOrderType,
     addCustomerName,
-    subtractQuantity,
-    addQuantity
+    subtractQuantity, 
+    addQuantity,
+    myOrderCount
   };
 });

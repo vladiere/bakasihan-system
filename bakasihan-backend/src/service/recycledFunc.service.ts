@@ -1,8 +1,22 @@
 import executeQuery from '../utils/executeQuery.util';
 import { Request,Response } from "express";
-import { countTable,Category, myOrderT, myOrderhistoryT } from '../types/products.types';
+import { countTable,Category, myOrderhistoryT } from '../types/products.types';
 import { recieptTypes } from '../types/tables.types';
 import { ItemsDataT,amountDataT, countDataT, salesDataT, usersDataT } from '../types/items.types';
+
+
+export const getItemAll = async(req:Request,res:Response)=>{
+  try {
+    const QueryCategory = "SELECT id FROM items_category_tbl WHERE category_name = 'drinks'"
+    const [item_category] = await executeQuery(QueryCategory,[]) as Array<any>
+    const itemsQuery = "SELECT id,item_name,remaining_quantity FROM items_tbl WHERE item_category_id <> ?"
+    const items = await executeQuery(itemsQuery,[item_category.id]) as Array<any>  
+    return res.status(200).send({ items });
+  } catch (error) {
+    console.error('Error occurred:', error);
+    return res.status(500).send({ message: "Something went wrong." });
+  }
+}
 
 export const getProducts = async (req: Request, res: Response) => {
   console.log(req.query);
@@ -23,7 +37,7 @@ export const getProducts = async (req: Request, res: Response) => {
       p.status  
     FROM product_categories_tbl AS c 
     LEFT JOIN products_tbl AS p ON c.id = p.category_id
-    WHERE c.category_name LIKE ? OR p.product_name LIKE ? OR p.product_description LIKE ?
+    WHERE (c.category_name LIKE ? OR p.product_name LIKE ? OR p.product_description LIKE ?) AND DATE(p.created_at) = CURDATE()
   `;
 
   try {
@@ -158,6 +172,7 @@ export const getAllAdminProducts = async(req: Request, res: Response) => {
         FROM products_tbl as product 
         LEFT OUTER JOIN product_categories_tbl as category 
         ON category.id = product.category_id 
+        ORDER BY product.id DESC
         WHERE product.product_name LIKE ? 
           OR product.product_description LIKE ? 
           OR category.category_name LIKE ? 
@@ -414,15 +429,18 @@ export const getAllDataDashBoardRequired = async (req: Request, res: Response) =
   try {
     // Query for today's sales
     const getTodayDataOrders = "SELECT SUM(total_amount) as total_amount FROM order_tbl WHERE status = 'paid' AND DATE(ctime) = CURDATE()";
-
+    const getTodayDataPullout = "SELECT SUM(total_amount) as total_amount FROM pullout_inventory_tbl WHERE DATE(created_at) = CURDATE()"
     // Query for this week's sales
     const getThisWeekDataOrders = "SELECT SUM(total_amount) as total_amount FROM order_tbl WHERE status = 'paid' AND WEEK(ctime, 1) = WEEK(CURDATE(), 1)";
+    const getThisWeekDataPullout = "SELECT SUM(total_amount) as total_amount FROM pullout_inventory_tbl WHERE WEEK(created_at, 1) = WEEK(CURDATE(), 1)"
 
     // Query for this month's sales
     const getThisMonthDataOrders = "SELECT SUM(total_amount) as total_amount FROM order_tbl WHERE status = 'paid' AND MONTH(ctime) = MONTH(CURDATE()) AND YEAR(ctime) = YEAR(CURDATE())";
+    const getThisMonthDataPullout = "SELECT SUM(total_amount) as total_amount FROM pullout_inventory_tbl WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())"
 
     // Query for this year's sales
     const getThisYearDataOrders = "SELECT SUM(total_amount) as total_amount FROM order_tbl WHERE status = 'paid' AND YEAR(ctime) = YEAR(CURDATE())";
+    const getThisYearDataPullout = "SELECT SUM(total_amount) as total_amount FROM pullout_inventory_tbl WHERE YEAR(created_at) = YEAR(CURDATE())"
 
     const newOrdersQuery = "SELECT COUNT(*) as total_number FROM order_tbl WHERE status = 'unpaid' AND DATE(ctime) = CURDATE()"
 
@@ -431,7 +449,20 @@ export const getAllDataDashBoardRequired = async (req: Request, res: Response) =
 FROM order_tbl 
 WHERE YEAR(ctime) = YEAR(CURDATE()) 
    AND status = 'paid' 
-GROUP BY data_date`
+GROUP BY data_date
+ORDER BY 
+    data_date
+`
+
+const pulloutperMonthQuery = `
+SELECT DATE_FORMAT(created_at, '%Y-%m') AS data_date, 
+    SUM(total_amount) AS sales 
+FROM pullout_inventory_tbl 
+WHERE YEAR(created_at) = YEAR(CURDATE()) 
+GROUP BY data_date
+ORDER BY 
+    data_date
+`
 
 
 const salesperWeekQuery = `
@@ -447,8 +478,23 @@ WHERE
 GROUP BY 
     data_date
 ORDER BY 
-    data_date;
+    data_date
 `
+const pulloutperWeekQuery = `
+SELECT 
+    WEEK(created_at, 1) - WEEK(DATE_SUB(created_at, INTERVAL DAYOFMONTH(created_at) - 1 DAY), 1) + 1 AS data_date,
+    SUM(total_amount) AS sales
+FROM 
+    pullout_inventory_tbl
+WHERE 
+    MONTH(created_at) = MONTH(CURRENT_DATE) AND
+    YEAR(created_at) = YEAR(CURRENT_DATE)
+GROUP BY 
+    data_date
+ORDER BY 
+    data_date
+`
+
 
 
     // Execute the queries
@@ -459,34 +505,74 @@ ORDER BY
     const [ThisMonthAmountOrders] = await executeQuery(getThisMonthDataOrders, []) as Array<amountDataT>;
 
     const [ThisYearAmountOrders] = await executeQuery(getThisYearDataOrders, []) as Array<amountDataT>;
+
+    const [TodayAmountPullout] = await executeQuery(getTodayDataPullout, []) as Array<amountDataT>;
+    
+    const [ThisWeekAmountPullout] = await executeQuery(getThisWeekDataPullout, []) as Array<amountDataT>;
+
+    const [ThisMonthAmountPullout] = await executeQuery(getThisMonthDataPullout, []) as Array<amountDataT>;
+
+    const [ThisYearAmountPullout] = await executeQuery(getThisYearDataPullout, []) as Array<amountDataT>;
+
+    
     const [newOrders] = await executeQuery(newOrdersQuery, []) as Array<countDataT>;
     const monthlySales = await executeQuery(salesPermonthQuery,[]) as Array<salesDataT>
     const weeklySales = await executeQuery(salesperWeekQuery,[]) as Array<salesDataT>
+    const monthlypullout = await executeQuery(pulloutperMonthQuery,[]) as Array<salesDataT>
+    const weeklypullout = await executeQuery(pulloutperWeekQuery,[]) as Array<salesDataT>
 
+    const monthlySalesDataFinal: Array<{ data_date: string; sales: number }> = [];
 
+monthlySales.forEach((newVal) => {
+  const matchingPullout = monthlypullout.find((myval) => myval.data_date === newVal.data_date);
 
-    // Calculate today's sales
+  const salesValue = newVal.sales - (matchingPullout?.sales || 0); // Handle undefined case with `|| 0`
+  monthlySalesDataFinal.push({
+    data_date: newVal.data_date,
+    sales: Math.floor(salesValue), // Ensure salesValue is floored
+  });
+});
+
+const weeklySalesDataFinal: Array<{ data_date: string; sales: number }> = [];
+
+weeklySales.forEach((newVal) => {
+  const matchingPullout = weeklypullout.find((myval) => myval.data_date === newVal.data_date);
+
+  const salesValue = newVal.sales - (matchingPullout?.sales || 0); // Handle undefined case with `|| 0`
+  weeklySalesDataFinal.push({
+    data_date: newVal.data_date,
+    sales: Math.floor(salesValue), // Ensure salesValue is floored
+  });
+});
+    
     const TodaySales = TodayAmountOrders.total_amount
-
+    
     // Calculate this week's sales
     const ThisWeekSales = ThisWeekAmountOrders.total_amount
-
+    
     // Calculate this month's sales
     const ThisMonthSales = ThisMonthAmountOrders.total_amount
-
+    
     // Calculate this year's sales
     const ThisYearSales = ThisYearAmountOrders.total_amount
     const newOrderData = newOrders.total_number
+    
+    const todaySalesDataAmount = Math.floor(TodaySales - TodayAmountPullout.total_amount)
+    const thisWeekSalesDataAmount = Math.floor(ThisWeekSales - ThisWeekAmountPullout.total_amount)
+    const thisMonthSalesDataAmount = Math.floor(ThisMonthSales - ThisMonthAmountPullout.total_amount)
+    const ThisYearSalesDataAmount = Math.floor(ThisYearSales - ThisYearAmountPullout.total_amount)
+
+    // Calculate today's sales
 
     // Return the sales data
     return res.status(200).send({
-      TodaySales,
-      ThisWeekSales,
-      ThisMonthSales,
-      ThisYearSales,
+      TodaySales:todaySalesDataAmount,
+      ThisWeekSales:thisWeekSalesDataAmount,
+      ThisMonthSales:thisMonthSalesDataAmount,
+      ThisYearSales:ThisYearSalesDataAmount,
       newOrderData,
-      monthlySales,
-      weeklySales
+      monthlySales:monthlySalesDataFinal,
+      weeklySales:weeklySalesDataFinal
     });
   } catch (error) {
     return res.status(500).send({ message: "Server error.", error });
