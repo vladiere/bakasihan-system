@@ -1,6 +1,6 @@
-import { defineStore } from "pinia";
-import { userAuthT } from "src/components/models";
-import { ref } from "vue";
+import { defineStore } from 'pinia';
+import { userAuthT } from 'src/components/models';
+import { ref } from 'vue';
 
 export const useAuthStore = defineStore('auth',()=>{
   const accessToken = ref<string>('');

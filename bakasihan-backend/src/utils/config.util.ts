@@ -5,7 +5,7 @@ dotenv.config();
 
 const MYSQL_HOST = process.env.MYSQLHOST || "localhost";
 const MYSQL_USER = process.env.MYSQLUSER || "root";
-const MYSQL_PASSWORD = process.env.MYSQLPASSWORD || "";
+const MYSQL_PASSWORD = process.env.MYSQLPASSWORD || "xReaper#666";
 const MYSQL_DATABASE = process.env.MYSQL_DATABASE || "default_db";
 
 const MYSQL = {

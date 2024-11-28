@@ -14,15 +14,6 @@
         </q-card>
       </div>
     </q-row>
-    <div class="second-grid-view">
-      <q-card>
-        <q-card-section>
-          <div class="chart-container">
-            <canvas id="salesChart" ref="salesChart"></canvas>
-          </div>
-        </q-card-section>
-      </q-card>
-    </div>
     <div class="third-grid-view">
       <q-card>
         <q-card-section>
@@ -48,19 +39,22 @@
 import { onMounted, ref, watch, nextTick } from 'vue';
 import { Chart, ChartTypeRegistry, registerables } from 'chart.js';
 import { useDashboardStore } from '../stores/dashboardData';
-import {humanizeDate, humanizeDateMonthlyDate} from '../services/api.services'
+import {
+  humanizeDate,
+  humanizeDateMonthlyDate,
+} from '../services/api.services';
 
 const dashboardStore = useDashboardStore();
 Chart.register(...registerables);
 const chartData = ref<Array<number>>([]);
 const chartInstance = ref<Chart | null>(null);
-const monthlySalesLabel = ref<Array<string>>([])
-const monthlySalesData = ref<Array<number>>([])
-  const weeklySalesLabel = ref<Array<string>>([])
-const weeklySalesData = ref<Array<number>>([])
-  let datenow = new Date()
-  datenow.toISOString()
-  console.log(datenow)
+const monthlySalesLabel = ref<Array<string>>([]);
+const monthlySalesData = ref<Array<number>>([]);
+const weeklySalesLabel = ref<Array<string>>([]);
+const weeklySalesData = ref<Array<number>>([]);
+let datenow = new Date();
+datenow.toISOString();
+console.log(datenow);
 // Watch for changes in sales values and update chart data accordingly
 watch(() => dashboardStore.salesData, async (newSalesData) => {
   // Filter out the "New Orders Arrived" entry
@@ -72,10 +66,10 @@ watch(() => dashboardStore.salesData, async (newSalesData) => {
     return parseFloat(salesValue); // Use parseFloat for decimal values
   });
 
-  if (chartInstance.value) {
-    chartInstance.value.destroy();
-    chartInstance.value = null;
-  }
+    if (chartInstance.value) {
+      chartInstance.value.destroy();
+      chartInstance.value = null;
+    }
 
   await nextTick();
   const canvas = document.getElementById('salesChart') as HTMLCanvasElement;
@@ -97,11 +91,20 @@ watch(() => dashboardStore.monthlySales, async (salesMonthly) => {
     chartInstance.value = null;
   }
 
-  await nextTick();
-  const canvas = document.getElementById('monthlysales') as HTMLCanvasElement;
-  const mybackground = ['green', 'blue', 'orange', 'red', 'yellow']
-  createChart("Monthly Sales",mybackground,monthlySalesData.value,monthlySalesLabel.value,canvas,'bar' as keyof ChartTypeRegistry);
-}, { immediate: false });
+    await nextTick();
+    const canvas = document.getElementById('monthlysales') as HTMLCanvasElement;
+    const mybackground = ['green', 'blue', 'orange', 'red', 'yellow'];
+    createChart(
+      'Monthly Sales',
+      mybackground,
+      monthlySalesData.value,
+      monthlySalesLabel.value,
+      canvas,
+      'bar' as keyof ChartTypeRegistry
+    );
+  },
+  { immediate: false }
+);
 
 watch(() => dashboardStore.weeklySales, async (salesWeekly) => {
 
@@ -122,10 +125,19 @@ watch(() => dashboardStore.weeklySales, async (salesWeekly) => {
 
 
 // Create chart function
-const createChart = (dataset_label:string,background: Array<string|null>,data: Array<number | null>,labels: Array<string | null>,canvas: HTMLCanvasElement,bar_type: keyof ChartTypeRegistry) => {
+const createChart = (
+  dataset_label: string,
+  background: Array<string | null>,
+  data: Array<number | null>,
+  labels: Array<string | null>,
+  canvas: HTMLCanvasElement,
+  bar_type: keyof ChartTypeRegistry
+) => {
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    const validBackground = background.filter((color): color is string => color !== null);
+    const validBackground = background.filter(
+      (color): color is string => color !== null
+    );
     return new Chart(ctx, {
       type: bar_type, // You can change the type to 'line', 'pie', etc.
       data: {
@@ -154,11 +166,10 @@ const createChart = (dataset_label:string,background: Array<string|null>,data: A
 };
 
 // Fetch data on mounted
-onMounted(async() => {
+onMounted(async () => {
   await dashboardStore.fetchData(); // Call the fetchData method from the store if needed
 });
 </script>
-
 
 <style>
 .chart-container {
@@ -176,37 +187,38 @@ onMounted(async() => {
   height: 100%; /* Full height */
 }
 
-.second-grid-view, .third-grid-view {
+.second-grid-view,
+.third-grid-view {
   margin-top: 20px; /* Add top margin for spacing */
   height: auto; /* Allow the height to be determined by content */
 }
 
 @media screen and (max-width: 765px) {
   .sales-card {
-  min-height: 150px; /* Maintain consistency */
-  display: flex;
-  flex-direction:wrap;
-  margin-top: 2%;
-}
-.first-grid-view {
-  display: flex;
-  flex-direction: column;
-}
+    min-height: 150px; /* Maintain consistency */
+    display: flex;
+    flex-direction: wrap;
+    margin-top: 2%;
+  }
+  .first-grid-view {
+    display: flex;
+    flex-direction: column;
+  }
 }
 @media screen and (min-width: 765px) {
   .sales-card {
-  min-height: 150px; /* Maintain consistency */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin-top: 2%;
-}
-.first-grid-view {
-  display: flex;
-  flex-wrap: wrap; /* Allows cards to wrap to the next line */
-  justify-content: space-between; /* Aligns items with space between */
-}
+    min-height: 150px; /* Maintain consistency */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2%;
+  }
+  .first-grid-view {
+    display: flex;
+    flex-wrap: wrap; /* Allows cards to wrap to the next line */
+    justify-content: space-between; /* Aligns items with space between */
+  }
 }
 .q-col {
   padding: 8px; /* Add padding to create margin effect */

@@ -51,6 +51,7 @@ export const addUserOrder = (val:object) => api.post('/user/addUserOrder',val)
 export const userReciept = (val:object) => api.post('/user/userReciept',val)
 export const userCheckIfTheresSameOrderID = (val:object) => api.post('/user/userCheckIfTheresSameOrderID',val)
 export const getProducts = (params:object) => api.get('/user/userGetProducts',params)
+export const resetOrdersGoBacktoIndex = (val:object) => api.post('/user/goBackToIndex',val)
 
 //exported functions
 

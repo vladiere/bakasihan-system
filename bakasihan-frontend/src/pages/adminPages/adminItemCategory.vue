@@ -27,14 +27,18 @@
       <template v-slot:body-cell-actions="props">
         <q-td>
           <q-btn
-          v-if="props.row.category_name.toLowerCase() !== 'drinks' && authStore.user && authStore.user.role === 'super_admin'"
-          flat
-    icon="mdi-delete-outline"
-    class="q-mx-sm"
-    @click="openDeleteDialog(props.row.id,props.row.category_name)"
-  >
-    <q-tooltip>Delete</q-tooltip>
-  </q-btn>
+            v-if="
+              props.row.category_name.toLowerCase() !== 'drinks' &&
+              authStore.user &&
+              authStore.user.role === 'super_admin'
+            "
+            flat
+            icon="mdi-delete-outline"
+            class="q-mx-sm"
+            @click="openDeleteDialog(props.row.id, props.row.category_name)"
+          >
+            <q-tooltip>Delete</q-tooltip>
+          </q-btn>
         </q-td>
       </template>
     </q-table>
@@ -77,18 +81,32 @@
     </q-card>
   </q-dialog>
   <q-dialog v-model="deleteDialog">
-        <q-card>
-            <q-card-section>Are you sure you want to <span v-if="cat_name.toLowerCase() === 'drinks'">reset</span><span v-else>delete</span> this Row?</q-card-section>
-            <q-card-section>
-                <q-btn flat icon="mdi-close" @click="deleteDialog = false" class="q-mx-sm">
-                    <q-tooltip>No</q-tooltip>
-                </q-btn>
-                <q-btn flat icon="mdi-check" class="q-mx-sm" @click="handleDeleteCategory(ID,cat_name)">
-                    <q-tooltip>Yes</q-tooltip>
-                </q-btn>
-            </q-card-section>
-        </q-card>
-    </q-dialog>
+    <q-card>
+      <q-card-section
+        >Are you sure you want to
+        <span v-if="cat_name.toLowerCase() === 'drinks'">reset</span
+        ><span v-else>delete</span> this Row?</q-card-section
+      >
+      <q-card-section>
+        <q-btn
+          flat
+          icon="mdi-close"
+          @click="deleteDialog = false"
+          class="q-mx-sm"
+        >
+          <q-tooltip>No</q-tooltip>
+        </q-btn>
+        <q-btn
+          flat
+          icon="mdi-check"
+          class="q-mx-sm"
+          @click="handleDeleteCategory(ID, cat_name)"
+        >
+          <q-tooltip>Yes</q-tooltip>
+        </q-btn>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -104,14 +122,13 @@ import {
   categoryT,
 } from 'src/components/models';
 import { useQuasar } from 'quasar';
-import {useAuthStore} from 'src/stores/authStore'
+import { useAuthStore } from 'src/stores/authStore';
 
 const search = ref<string>('');
-const authStore = useAuthStore()
+const authStore = useAuthStore();
 const loading = ref(false);
 const categoryDialog = ref(false);
 const $q = useQuasar();
-const viewData = ref<categoryT | null>(null);
 const rows = ref<Array<categoryDataT>>([]);
 const formdata = ref({
   category_name: '',
@@ -123,14 +140,14 @@ interface Column {
   field: string | ((row: categoryDataT) => categoryDataT);
   sortable?: boolean;
 }
-const ID = ref(0)
-const cat_name = ref('')
-const deleteDialog = ref(false)
-    const openDeleteDialog = (val_id:number,val_cat_name:string)=>{
-        ID.value = val_id
-        cat_name.value = val_cat_name
-        deleteDialog.value = true
-    } 
+const ID = ref(0);
+const cat_name = ref('');
+const deleteDialog = ref(false);
+const openDeleteDialog = (val_id: number, val_cat_name: string) => {
+  ID.value = val_id;
+  cat_name.value = val_cat_name;
+  deleteDialog.value = true;
+};
 const pagination = ref({
   page: 1,
   rowsPerPage: 5,
@@ -198,16 +215,10 @@ onMounted(() => {
   onRequest(search.value, pagination.value.page, pagination.value.rowsPerPage);
 });
 
-const view = (data: categoryT) => {
-  console.log(data);
-  viewData.value = { ...data };
-};
-
 const handleInsertItemCategory = async () => {
   loading.value = true;
   await insertItemCategory({ category_name: formdata.value.category_name })
     .then((response) => {
-      loading.value = false;
       formdata.value.category_name = '';
       categoryDialog.value = false;
       onRequest(
@@ -230,12 +241,17 @@ const handleInsertItemCategory = async () => {
         icon: 'close',
         message: error.response.data.message,
       });
+    })
+    .finally(() => {
+      loading.value = false;
     });
 };
 
-const handleDeleteCategory = async(val_id:number,val_cat_name:string)=>{
-  await deleteItemsCategory({id:val_id,category_name:val_cat_name}).then(response =>{
-    onRequest(
+const handleDeleteCategory = async (val_id: number, val_cat_name: string) => {
+  loading.value = true;
+  await deleteItemsCategory({ id: val_id, category_name: val_cat_name })
+    .then((response) => {
+      onRequest(
         search.value,
         pagination.value.page,
         pagination.value.rowsPerPage
@@ -247,16 +263,20 @@ const handleDeleteCategory = async(val_id:number,val_cat_name:string)=>{
         icon: 'check',
         message: response.data.message,
       });
-  }).catch(error =>{
-    $q.notify({
+      deleteDialog.value = false;
+    })
+    .catch((error) => {
+      $q.notify({
         color: 'negative',
         textColor: 'white',
         icon: 'close',
         message: error.response.data.message,
       });
-  })
-}
-
+    })
+    .finally(() => {
+      loading.value = false;
+    });
+};
 </script>
 
 <style scoped></style>

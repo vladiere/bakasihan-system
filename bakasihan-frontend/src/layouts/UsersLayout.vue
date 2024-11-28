@@ -280,14 +280,6 @@
           <q-btn
             dense
             rounded
-            color="grey-8"
-            label="hold"
-            class="col"
-            icon="stop"
-          />
-          <q-btn
-            dense
-            rounded
             icon="skip_next"
             color="accent"
             label="proceed"
@@ -351,13 +343,12 @@ const addCustomer = (customer_name: string) => {
   $q.loading.show({
     message: 'adding Customer order',
   });
-  try {
-    orderStore.addCustomerName(customer_name);
+  if (customer_name === '') {
     timer = setTimeout(() => {
       $q.loading.show({
-        backgroundColor: 'positive',
+        backgroundColor: 'negative',
         messageColor: 'white',
-        message: 'Customer has been Added',
+        message: 'Customer has not been Added',
       });
 
       timer = setTimeout(() => {
@@ -365,8 +356,24 @@ const addCustomer = (customer_name: string) => {
         timer = void 0;
       }, 500);
     }, 200);
-  } catch (error) {
-    console.log(error);
+  } else {
+    try {
+      orderStore.addCustomerName(customer_name);
+      timer = setTimeout(() => {
+        $q.loading.show({
+          backgroundColor: 'positive',
+          messageColor: 'white',
+          message: 'Customer has been Added',
+        });
+
+        timer = setTimeout(() => {
+          $q.loading.hide();
+          timer = void 0;
+        }, 500);
+      }, 200);
+    } catch (error) {
+      console.log(error);
+    }
   }
 };
 const proccedToOrderType = async () => {
@@ -375,6 +382,7 @@ const proccedToOrderType = async () => {
   });
   let OrderNumber = generateRandomNumber(1, 1000);
   if (
+    orderStore.myOrder?.customer_name === '' ||
     orderStore.myOrder?.customer_name == null ||
     orderStore.myOrder.orders.length < 1
   ) {
