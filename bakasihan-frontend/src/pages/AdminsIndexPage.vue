@@ -18,6 +18,15 @@
       <q-card>
         <q-card-section>
           <div class="chart-container">
+            <canvas id="salesChart" ref="salesChart"></canvas>
+          </div>
+        </q-card-section>
+      </q-card>
+    </div>
+    <div class="third-grid-view">
+      <q-card>
+        <q-card-section>
+          <div class="chart-container">
             <canvas id="monthlysales" ref="monthlysales"></canvas>
           </div>
         </q-card-section>
@@ -56,40 +65,56 @@ let datenow = new Date();
 datenow.toISOString();
 console.log(datenow);
 // Watch for changes in sales values and update chart data accordingly
-watch(() => dashboardStore.salesData, async (newSalesData) => {
-  // Filter out the "New Orders Arrived" entry
-  const filteredSalesData = newSalesData.filter(item => item.title !== 'New Orders Arrived');
+watch(
+  () => dashboardStore.salesData,
+  async (newSalesData) => {
+    // Filter out the "New Orders Arrived" entry
+    const filteredSalesData = newSalesData.filter(
+      (item) => item.title !== 'New Orders Arrived'
+    );
 
-  // Assuming you want to update the chart with filtered sales data here
-  chartData.value = filteredSalesData.map(item => {
-    const salesValue = item.sales.replace(/[^0-9.-]+/g, ""); // Remove any non-numeric characters
-    return parseFloat(salesValue); // Use parseFloat for decimal values
-  });
+    // Assuming you want to update the chart with filtered sales data here
+    chartData.value = filteredSalesData.map((item) => {
+      const salesValue = item.sales.replace(/[^0-9.-]+/g, ''); // Remove any non-numeric characters
+      return parseFloat(salesValue); // Use parseFloat for decimal values
+    });
 
     if (chartInstance.value) {
       chartInstance.value.destroy();
       chartInstance.value = null;
     }
 
-  await nextTick();
-  const canvas = document.getElementById('salesChart') as HTMLCanvasElement;
-  const mylabel = filteredSalesData.map(item => item.title); // Update labels dynamically
-  const mybackground = ['green', 'blue', 'orange', 'red', 'yellow']; // Adjust as needed
+    await nextTick();
+    const canvas = document.getElementById('salesChart') as HTMLCanvasElement;
+    const mylabel = filteredSalesData.map((item) => item.title); // Update labels dynamically
+    const mybackground = ['green', 'blue', 'orange', 'red', 'yellow']; // Adjust as needed
 
-  createChart("Sales Data", mybackground, chartData.value, mylabel, canvas, 'bar' as keyof ChartTypeRegistry);
-});
-
-
-watch(() => dashboardStore.monthlySales, async (salesMonthly) => {
-
-  monthlySalesData.value = [];
-  monthlySalesData.value.push(...salesMonthly.map(data => parseInt(data.sales)));
-  monthlySalesLabel.value = [];
-  monthlySalesLabel.value.push(...salesMonthly.map(data => humanizeDateMonthlyDate(data.data_date)));
-  if (chartInstance.value) {
-    chartInstance.value.destroy();
-    chartInstance.value = null;
+    createChart(
+      'Sales Data',
+      mybackground,
+      chartData.value,
+      mylabel,
+      canvas,
+      'bar' as keyof ChartTypeRegistry
+    );
   }
+);
+
+watch(
+  () => dashboardStore.monthlySales,
+  async (salesMonthly) => {
+    monthlySalesData.value = [];
+    monthlySalesData.value.push(
+      ...salesMonthly.map((data) => parseInt(data.sales))
+    );
+    monthlySalesLabel.value = [];
+    monthlySalesLabel.value.push(
+      ...salesMonthly.map((data) => humanizeDateMonthlyDate(data.data_date))
+    );
+    if (chartInstance.value) {
+      chartInstance.value.destroy();
+      chartInstance.value = null;
+    }
 
     await nextTick();
     const canvas = document.getElementById('monthlysales') as HTMLCanvasElement;
@@ -106,23 +131,36 @@ watch(() => dashboardStore.monthlySales, async (salesMonthly) => {
   { immediate: false }
 );
 
-watch(() => dashboardStore.weeklySales, async (salesWeekly) => {
+watch(
+  () => dashboardStore.weeklySales,
+  async (salesWeekly) => {
+    weeklySalesData.value = [0];
+    weeklySalesData.value.push(
+      ...salesWeekly.map((data) => parseInt(data.sales))
+    );
+    weeklySalesLabel.value = [''];
+    weeklySalesLabel.value.push(
+      ...salesWeekly.map((data) => String(data.data_date))
+    );
+    if (chartInstance.value) {
+      chartInstance.value.destroy();
+      chartInstance.value = null;
+    }
+    await nextTick();
 
-  weeklySalesData.value = [0];
-  weeklySalesData.value.push(...salesWeekly.map(data => parseInt(data.sales)));
-  weeklySalesLabel.value = [""];
-  weeklySalesLabel.value.push(...salesWeekly.map(data => String(data.data_date)));
-  if (chartInstance.value) {
-    chartInstance.value.destroy();
-    chartInstance.value = null;
-  }
-  await nextTick();
-  
-  const canvas = document.getElementById('weeklysales') as HTMLCanvasElement;
-  const mybackground = ['green', 'blue', 'orange', 'red', 'yellow']
-  createChart(`weekly Sales This Month ( ${humanizeDate(String(datenow))} )`,mybackground,weeklySalesData.value,weeklySalesLabel.value,canvas,'line' as keyof ChartTypeRegistry);
-}, { immediate: false });
-
+    const canvas = document.getElementById('weeklysales') as HTMLCanvasElement;
+    const mybackground = ['green', 'blue', 'orange', 'red', 'yellow'];
+    createChart(
+      `weekly Sales This Month ( ${humanizeDate(String(datenow))} )`,
+      mybackground,
+      weeklySalesData.value,
+      weeklySalesLabel.value,
+      canvas,
+      'line' as keyof ChartTypeRegistry
+    );
+  },
+  { immediate: false }
+);
 
 // Create chart function
 const createChart = (
